@@ -1,0 +1,73 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import path from 'node:path';
+import { stat } from 'node:fs/promises';
+
+/** 获取所有文章的静态路由 */
+export async function getStaticPaths() {
+  const modules = import.meta.glob('../../content/blog/*.md');
+  return Object.keys(modules).map((filePath) => {
+    const fileName = path.basename(filePath, path.extname(filePath));
+    const slug = fileName.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-') || fileName;
+    return {
+      params: { slug },
+      props: { filePath },
+    };
+  });
+}
+
+/** 渲染指定 slug 的文章内容 */
+const resolvePost = async (filePath: string) => {
+  const modules = import.meta.glob('../../content/blog/*.md') as Record<
+    string,
+    () => Promise<{
+      file: string;
+      frontmatter?: Record<string, unknown>;
+      rawContent: () => Promise<string>;
+      Content: any;
+    }>
+  >;
+  const loader = modules[filePath];
+  const mod = await loader();
+  const fileStat = await stat(mod.file);
+  const raw = await mod.rawContent();
+  const frontmatter =
+    mod.frontmatter && typeof mod.frontmatter === 'object' ? mod.frontmatter : {};
+  const titleFromContent = raw
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => line.startsWith('# '))
+    ?.replace(/^#\s+/, '');
+  const title =
+    (typeof frontmatter.title === 'string' ? frontmatter.title : undefined) ??
+    titleFromContent ??
+    path.basename(filePath, path.extname(filePath));
+  const dateValue =
+    frontmatter.date instanceof Date
+      ? frontmatter.date
+      : frontmatter.date
+        ? new Date(String(frontmatter.date))
+        : fileStat.mtime;
+  return {
+    title,
+    date: dateValue.toLocaleDateString('zh-CN'),
+    Content: mod.Content,
+  };
+};
+
+const { filePath } = Astro.props;
+const post = await resolvePost(filePath);
+const Content = post.Content;
+---
+
+<BaseLayout title={post.title} description={post.title}>
+  <article class="post post-detail">
+    <h1>{post.title}</h1>
+    <div class="post-meta">
+      <span>{post.date}</span>
+    </div>
+    <div class="post-content">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>

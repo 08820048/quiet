@@ -1,0 +1,31 @@
+---
+import '../styles/global.css';
+
+const { title, description } = Astro.props;
+const siteTitle = title ?? '极简 Markdown 博客';
+const siteDescription = description ?? '一个极简的 Markdown 技术博客';
+const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com');
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{siteTitle}</title>
+    <meta name="description" content={siteDescription} />
+    <link rel="canonical" href={canonical.toString()} />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav">
+        <a href="/">首页</a>
+        <a href="/projects">项目</a>
+        <a href="/links">友链</a>
+      </nav>
+    </header>
+    <main>
+      <slot />
+    </main>
+  </body>
+</html>
