@@ -1,6 +1,7 @@
 import rss from '@astrojs/rss';
 import path from 'node:path';
 import { stat } from 'node:fs/promises';
+import { resolvePostSlug } from '../utils/slug.js';
 
 /** 生成 RSS 条目 */
 export async function GET(context) {
@@ -36,7 +37,7 @@ export async function GET(context) {
           : frontmatter.date
             ? new Date(String(frontmatter.date))
             : fileStat.mtime;
-      const slug = fileName.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-') || fileName;
+      const slug = resolvePostSlug(fileName);
 
       return {
         title,

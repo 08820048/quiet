@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import InfinitePostList from '../components/InfinitePostList.jsx';
 import path from 'node:path';
 import { stat } from 'node:fs/promises';
+import { resolvePostSlug } from '../utils/slug.js';
 
 const modules = import.meta.glob('../content/blog/*.md', { eager: true }) as Record<
   string,
@@ -28,11 +29,6 @@ const resolveTitle = (raw: string, frontmatter: Record<string, unknown>, fileNam
   );
 };
 
-const resolveSlug = (fileName: string) => {
-  const slug = fileName.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-');
-  return slug || fileName;
-};
-
 const posts = await Promise.all(
   Object.values(modules).map(async (mod) => {
     const filePath = mod.file;
@@ -43,7 +39,7 @@ const posts = await Promise.all(
     const title = resolveTitle(raw, frontmatter, fileName);
     // Sort homepage posts by last file update time, newest first.
     const dateValue = fileStat.mtime;
-    const slug = resolveSlug(fileName);
+    const slug = resolvePostSlug(fileName);
 
     return {
       id: fileName,

@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { resolvePostSlug } from '../utils/slug.js';
 
 const escapeXml = (value) =>
   value
@@ -8,11 +9,6 @@ const escapeXml = (value) =>
     .replace(/\"/g, '&quot;')
     .replace(/'/g, '&apos;');
 
-const resolveSlug = (fileName) => {
-  const slug = fileName.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-');
-  return slug || fileName;
-};
-
 export async function GET(context) {
   const site = context.site ?? new URL('https://example.com');
   const staticPaths = ['/', '/projects', '/links', '/rss.xml'];
@@ -20,7 +16,7 @@ export async function GET(context) {
   const blogModules = import.meta.glob('../content/blog/*.md', { eager: true });
   const blogPaths = Object.values(blogModules).map((mod) => {
     const fileName = path.basename(mod.file, path.extname(mod.file));
-    const slug = resolveSlug(fileName);
+    const slug = resolvePostSlug(fileName);
     return `/blog/${slug}`;
   });
 

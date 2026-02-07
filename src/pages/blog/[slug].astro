@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import path from 'node:path';
 import { stat } from 'node:fs/promises';
+import { resolvePostSlug } from '../../utils/slug.js';
 
 type PostModule = {
   file: string;
@@ -39,7 +40,7 @@ export async function getStaticPaths() {
             ? new Date(String(frontmatter.date))
             : fileStat.mtime;
 
-      const slug = fileName.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-') || fileName;
+      const slug = resolvePostSlug(fileName);
 
       return {
         filePath,
