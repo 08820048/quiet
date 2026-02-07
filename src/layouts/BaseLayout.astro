@@ -15,6 +15,11 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com
     <title>{siteTitle}</title>
     <meta name="description" content={siteDescription} />
     <link rel="canonical" href={canonical.toString()} />
+    <script
+      defer
+      src="https://cloud.umami.is/script.js"
+      data-website-id="3b459ab1-1907-468c-bcbe-58e26c627f51"
+    ></script>
     <script is:inline>
       (() => {
         const savedTheme = localStorage.getItem('theme');
