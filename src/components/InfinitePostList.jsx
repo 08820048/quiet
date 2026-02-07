@@ -1,26 +1,29 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 
 const PAGE_SIZE = 4;
 
-/** 渲染首页极简文章列表 */
+/** Render a minimal infinite-scrolling list of posts */
 export default function InfinitePostList({ posts }) {
-  const [visibleCount, setVisibleCount] = useState(Math.min(PAGE_SIZE, posts.length));
+  const [visibleCount, setVisibleCount] = useState(posts.length);
 
   const visiblePosts = useMemo(() => posts.slice(0, visibleCount), [posts, visibleCount]);
 
-  /** 加载下一页文章标题 */
   const loadMore = () => {
     setVisibleCount((count) => Math.min(count + PAGE_SIZE, posts.length));
   };
+
+  useEffect(() => {
+    setVisibleCount(posts.length);
+  }, [posts.length]);
 
   return (
     <InfiniteScroll
       dataLength={visiblePosts.length}
       next={loadMore}
       hasMore={visiblePosts.length < posts.length}
-      loader={<div className="infinite-status">加载更多...</div>}
-      endMessage={<div className="infinite-status">已经到底了</div>}
+      loader={<div className="infinite-status">Loading more...</div>}
+      endMessage={<div className="infinite-status">No more posts</div>}
     >
       <ul className="post-list">
         {visiblePosts.map((post) => (

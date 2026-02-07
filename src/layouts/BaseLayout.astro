@@ -1,31 +1,93 @@
 ---
 import '../styles/global.css';
 
-const { title, description } = Astro.props;
-const siteTitle = title ?? '极简 Markdown 博客';
-const siteDescription = description ?? '一个极简的 Markdown 技术博客';
+const { title, description, bodyClass } = Astro.props;
+const siteTitle = title ?? 'Minimal Markdown Blog';
+const siteDescription = description ?? 'A minimal technical blog powered by Markdown.';
 const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com');
 ---
 
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en-US" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{siteTitle}</title>
     <meta name="description" content={siteDescription} />
     <link rel="canonical" href={canonical.toString()} />
+    <script is:inline>
+      (() => {
+        const savedTheme = localStorage.getItem('theme');
+        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = savedTheme === 'light' || savedTheme === 'dark'
+          ? savedTheme
+          : (systemDark ? 'dark' : 'light');
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
   </head>
-  <body>
+  <body class={bodyClass}>
     <header class="site-header">
       <nav class="site-nav">
-        <a href="/">首页</a>
-        <a href="/projects">项目</a>
-        <a href="/links">友链</a>
+        <a href="/">Home</a>
+        <a href="/projects">Projects</a>
+        <a href="/links">Links</a>
+        <div class="site-controls">
+          <button
+            id="theme-toggle"
+            class="theme-toggle"
+            type="button"
+            aria-label="Toggle dark mode"
+            title="Toggle dark mode"
+          >
+            <svg
+              class="theme-icon theme-icon-moon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+            <svg
+              class="theme-icon theme-icon-sun"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2" />
+              <path d="M12 20v2" />
+              <path d="M4.93 4.93l1.41 1.41" />
+              <path d="M17.66 17.66l1.41 1.41" />
+              <path d="M2 12h2" />
+              <path d="M20 12h2" />
+              <path d="M4.93 19.07l1.41-1.41" />
+              <path d="M17.66 6.34l1.41-1.41" />
+            </svg>
+          </button>
+        </div>
       </nav>
     </header>
     <main>
       <slot />
     </main>
+    <script is:inline>
+      (() => {
+        const themeToggle = document.getElementById('theme-toggle');
+
+        const applyTheme = (theme) => {
+          const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
+          document.documentElement.dataset.theme = resolvedTheme;
+          localStorage.setItem('theme', resolvedTheme);
+        };
+
+        applyTheme(document.documentElement.dataset.theme);
+
+        if (themeToggle) {
+          themeToggle.addEventListener('click', () => {
+            const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+            applyTheme(nextTheme);
+          });
+        }
+      })();
+    </script>
   </body>
 </html>

@@ -1,7 +1,28 @@
 @import "katex/dist/katex.min.css";
 
+@font-face {
+  font-family: "Geist Pixel";
+  src: url("/fonts/GeistPixel-Square.woff2") format("woff2");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Typestar";
+  src: url("/fonts/Typestar-OCR-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   --bg: #ffffff;
   --text: #1a1a1a;
   --muted: #6b6b6b;
@@ -10,15 +31,18 @@
   --code-bg: #f6f6f6;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0f0f10;
-    --text: #f5f5f5;
-    --muted: #b0b0b0;
-    --link: #7db1ff;
-    --border: #2a2a2a;
-    --code-bg: #1b1b1b;
-  }
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #000000;
+  --text: #f5f5f5;
+  --muted: #b0b0b0;
+  --link: #7db1ff;
+  --border: #2a2a2a;
+  --code-bg: #1b1b1b;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
 }
 
 *,
@@ -29,7 +53,7 @@
 
 body {
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Geist Pixel", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.7;
@@ -44,10 +68,22 @@ a:hover {
   text-decoration: underline;
 }
 
+ul {
+  list-style-type: square;
+}
+
+ul li::marker {
+  color: #111111;
+}
+
 main {
   max-width: 760px;
   margin: 0 auto;
   padding: 96px 20px 96px;
+}
+
+body.post-detail-page main {
+  max-width: 1080px;
 }
 
 header.site-header {
@@ -63,8 +99,60 @@ nav.site-nav {
   margin: 0 auto;
   padding: 16px 20px;
   display: flex;
+  align-items: center;
   gap: 16px;
   font-size: 15px;
+}
+
+.site-nav > a {
+  color: #ffffff;
+}
+
+.site-controls {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+}
+
+.theme-toggle {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.theme-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.theme-icon-sun {
+  display: none;
+}
+
+:root[data-theme='dark'] .theme-icon-sun {
+  display: block;
+}
+
+:root[data-theme='dark'] .theme-icon-moon {
+  display: none;
+}
+
+.theme-toggle:hover {
+  color: var(--text);
 }
 
 .post {
@@ -82,7 +170,7 @@ nav.site-nav {
 }
 
 .post-list {
-  list-style: disc;
+  list-style: square;
   padding-left: 20px;
   margin: 0;
   display: grid;
@@ -124,17 +212,87 @@ nav.site-nav {
   font-size: 12px;
 }
 
-.post-content pre {
+.post-content pre:not(.astro-code) {
   background: var(--code-bg);
   padding: 12px 16px;
   overflow-x: auto;
   border-radius: 6px;
+  line-height: 1;
+  font-family: "Typestar", "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-.post-content code {
+.post-content pre.astro-code {
+  padding: 12px 16px;
+  border-radius: 6px;
+  line-height: 1;
+  font-family: "Typestar", "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.post-content pre.astro-code code,
+.post-content pre.astro-code code span {
+  font-family: "Typestar", "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+}
+
+.post-content pre.astro-code code {
+  line-height: 1;
+}
+
+.post-content pre.astro-code .line {
+  display: block;
+  line-height: 1;
+  margin: 0;
+}
+
+.post-content pre.astro-code,
+.post-content pre.astro-code span {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+}
+
+:root[data-theme='dark'] .post-content pre.astro-code,
+:root[data-theme='dark'] .post-content pre.astro-code span {
+  color: var(--shiki-dark);
+  background-color: var(--shiki-dark-bg);
+}
+
+.post-content :not(pre) > code {
   background: var(--code-bg);
   padding: 2px 6px;
   border-radius: 4px;
+  font-family: "Typestar", "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.post-content blockquote {
+  margin: 16px 0;
+  padding: 10px 14px;
+  border-left: 4px solid var(--border);
+  background: color-mix(in srgb, var(--code-bg) 70%, var(--bg));
+  color: var(--muted);
+}
+
+.post-content blockquote p {
+  margin: 0;
+}
+
+.post-pagination {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.post-pagination-item {
+  min-height: 24px;
+}
+
+.post-pagination-prev {
+  text-align: left;
+}
+
+.post-pagination-next {
+  text-align: right;
 }
 
 .page-title {
@@ -175,5 +333,13 @@ nav.site-nav {
 
   .post h2 {
     font-size: 20px;
+  }
+
+  .post-pagination {
+    grid-template-columns: 1fr;
+  }
+
+  .post-pagination-next {
+    text-align: left;
   }
 }
