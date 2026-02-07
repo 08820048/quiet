@@ -32,6 +32,15 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com
         <a href="/">Home</a>
         <a href="/projects">Products</a>
         <a href="/links">Links</a>
+        <div class="site-search">
+          <input
+            id="header-search"
+            type="search"
+            class="site-search-input"
+            placeholder="Search articles..."
+            aria-label="Search articles"
+          />
+        </div>
         <div class="site-controls">
           <button
             id="theme-toggle"
@@ -46,9 +55,42 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com
     <main>
       <slot />
     </main>
+    <footer class="site-footer">
+      <div class="site-footer-content">
+        <p>© 2026 Blog. Made with love by Ornata</p>
+        <div class="site-social-links" aria-label="Social links">
+          <a
+            class="site-social-link"
+            href="https://x.com/xuyixff"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="X"
+            title="X"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path fill="currentColor" d="M9.294 6.928 14.357 1h-1.2L8.761 6.147 5.24 1H1.189l5.31 7.76L1.189 15h1.2l4.643-5.436L10.76 15h4.051zM7.64 8.866l-.538-.774L2.82 1.926h1.844l3.457 4.967.538.774 4.494 6.46h-1.844z"/>
+            </svg>
+          </a>
+          <a
+            class="site-social-link"
+            href="https://github.com/08820048"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="GitHub"
+            title="GitHub"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8a8.01 8.01 0 0 0 5.47 7.59c.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.52 7.52 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </footer>
     <script is:inline>
       (() => {
         const themeToggle = document.getElementById('theme-toggle');
+        const headerSearch = document.getElementById('header-search');
+        const isHomePage = document.body.classList.contains('home-page');
 
         const applyTheme = (theme) => {
           const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
@@ -65,6 +107,37 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com
           themeToggle.addEventListener('click', () => {
             const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
             applyTheme(nextTheme);
+          });
+        }
+
+        if (!isHomePage && headerSearch) {
+          headerSearch.value = '';
+          headerSearch.setAttribute('disabled', 'true');
+        }
+
+        if (isHomePage && headerSearch) {
+          const syncSearch = (value) => {
+            window.dispatchEvent(
+              new CustomEvent('globalsearchchange', {
+                detail: { query: value },
+              })
+            );
+          };
+
+          const initialQuery = new URLSearchParams(window.location.search).get('q') ?? '';
+          headerSearch.value = initialQuery;
+          syncSearch(initialQuery);
+
+          headerSearch.addEventListener('input', (event) => {
+            const query = event.currentTarget.value;
+            const url = new URL(window.location.href);
+            if (query.trim()) {
+              url.searchParams.set('q', query);
+            } else {
+              url.searchParams.delete('q');
+            }
+            window.history.replaceState({}, '', url.toString());
+            syncSearch(query);
           });
         }
       })();
