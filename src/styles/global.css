@@ -244,6 +244,14 @@ nav.site-nav {
   font-family: "Typestar", "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
+.post-content img {
+  display: block;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  margin: 12px auto;
+}
+
 .post-content blockquote {
   margin: 16px 0;
   padding: 10px 14px;

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 24;
 
 /** Render a minimal infinite-scrolling list of posts */
 export default function InfinitePostList({ posts }) {
-  const [visibleCount, setVisibleCount] = useState(posts.length);
+  const [visibleCount, setVisibleCount] = useState(Math.min(PAGE_SIZE, posts.length));
 
   const visiblePosts = useMemo(() => posts.slice(0, visibleCount), [posts, visibleCount]);
 
@@ -14,7 +14,7 @@ export default function InfinitePostList({ posts }) {
   };
 
   useEffect(() => {
-    setVisibleCount(posts.length);
+    setVisibleCount(Math.min(PAGE_SIZE, posts.length));
   }, [posts.length]);
 
   return (

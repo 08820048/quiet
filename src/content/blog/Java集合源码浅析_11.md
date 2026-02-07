@@ -1,3 +1,47 @@
+# Java集合源码浅析
+
+**摘要**：集合主要分为两组：单列集合和双列集合
+
+但列集合一般是指存放单个对象的集合，而双列集合一般是以<k,v>键值对形式存放数据的集合。
+
+
+
+**分类**：Java
+
+**标签**：后端, Java
+
+**发布时间**：2025-08-14T12:03:20
+
+---
+
+
+
+### 更新日志🎉
+
+2023-01-29 星期六
+> - 修正一些已知错误
+> - 调整文章布局结构
+> - 修正错别字词
+
+2022-05-26 10:20:23 星期四
+
+> - 修正语言表达逻辑
+> - 删除/修改了错别字词
+> - 更新了部分配图
+
+2022-08-02
+
+> - 修正错别字
+> - 修正语言表达逻辑
+
+2022-08-22
+
+> - 还是修已知的正错别词语
+
+---
+
+---
+
 Java集合解读
 
 ## IDEA快捷键
@@ -12,7 +56,7 @@ Java集合解读
 
 ## 概览
 
-**说明：**以下内容的分析源码，如没有特别说明，均来自JDK8.
+说明：以下内容的源码分析，如没有特别说明，均来自JDK8.
 
 > 1. 集合主要分为两组：单列集合和双列集合
 >
@@ -537,8 +581,7 @@ private void grow(int minCapacity) {
 又由于前面已经知道`elemenatData`其实是等于`0`的，那么直接导致这条赋值语句结果为`0`，也就是`newCapacity==0`，所以它后面紧接着出现了两个判断。
 
 > 1. 如果新的容量小于最小容量，那么将最小容量赋给这个新容量，**完成一次扩容，此时数组的容量由0变为10.**
->2. 如果`newCapacity > MAX_ARRAY_SIZE `,那么`newCpapcity`的值由方法`hugeCapacity()`决定。这个后面再说，我们继续当前的分析，在执行完上面的判断语句之后，最后对`elemantData`进行重新赋值，核心方法`Arrays.copyOf(elementData, newCapacity)`,该方法的作用是将`newCapacity`的值复制给`elementData`。之后`elementData`里面将会存在**10个null**值.
-> 
+> 2. 如果`newCapacity > MAX_ARRAY_SIZE `,那么`newCpapcity`的值由方法`hugeCapacity()`决定。这个后面再说，我们继续当前的分析，在执行完上面的判断语句之后，最后对`elemantData`进行重新赋值，核心方法`Arrays.copyOf(elementData, newCapacity)`,该方法的作用是将`newCapacity`的值复制给`elementData`。之后`elementData`里面将会存在**10个null**值.
 
 就是说，当我们**首次**使用该集合的**无参构造**初始化集合时，其实并不会触发**1.5倍的底层扩容机制**。注意，这里使用`copyOf()`方法的作用也是为了**保留扩容之前已经存在集合中的元素**，换句话说，每次扩容并不会导致已存在的元素丢失，而是在这些元素之后添加`N`个值为`null`的元素空间。比如这样:
 
@@ -1625,167 +1668,7 @@ public LinkedHashSet() {
 
 ****
 
-### `Map`
 
-#### 关系树
-
-![](https://images.waer.ltd/img/20220426111045.png)
-
-#### 特点
-
-- `Map`与`Collection`并列存在，用于保存具有映射关系的数据：K,V形式。
-- `Map`中的key和value可以是任何引用数据类型，会封装到`HashMap$Node`对象中。
-- `Map`中的key不允许重复，原理和`HashSet`一样。**value可以重复。**
-- `Map`中的key可以为null,value也可以为null，**注意key为null只能有一个，value为null却可以多个。**
-- `Map`存放数据的`key-value`示意图，一对`k-v`是存放在一个`Node`中的，又因为`Node`实现了`Entry`接口，所以也可以说一对`k-v`就是一个`Entry`。
-
-#### 遍历方式
-
-- containsKey:查找键是否存在
-- keySet:获取所有的键
-- entrySet:获取所有的k-v关系
-- values:获取所有的值
-
-```java
-package collection.Map;
-
-import java.util.*;
-
-/**
- * @author: 八尺妖剑
- * @date: 2022/4/30 8:56
- * @description:
- * @blog:www.waer.ltd
- */
-@SuppressWarnings({"all"})
-public class _Map {
-    public static void main(String[] args) {
-        Map map = new HashMap();
-        map.put("学习","Java");
-        map.put(1,"写文章");
-        map.put("姓名","李四");
-        map.put("年龄",22);
-        map.put(null,"李小璐");
-        map.put("RMB",null);
-
-        /*第一种：先取出所有的key，再根据key获取对应的value*/
-        Set keysSet = map.keySet();
-        //1.增强for循环
-        for (Object key : keysSet) {
-            System.out.println(key + ":" + map.get(key));
-        }
-        System.out.println("------------------分割线-------------------------");
-        //2.迭代器
-        //对key进行迭代
-        Iterator iterator = keysSet.iterator();
-        while (iterator.hasNext()) {
-            Object key = iterator.next();
-            System.out.println(key + ":" + map.get(key));
-        }
-        /*第二种：取出所有的value*/
-        Collection values = map.values();
-        //由此，可以是要弄所有Collection适用的遍历方法来取值
-        //1.增强for
-        for (Object value : values) {
-            System.out.println("增强for取值:" + value);
-        }
-        //2.迭代器
-        Iterator iterator1 = values.iterator();
-        while (iterator1.hasNext()){
-            Object val = iterator1.next();
-            System.out.println("迭代器取值:\n" +  val);
-        }
-
-        /*第三种：通过entrySet获取key和value*/
-        Set entrySet = map.entrySet();
-        //1.增强for
-        for (Object entry : entrySet) {
-            //将entry转为map.Entry
-            Map.Entry m = (Map.Entry) entry;
-            System.out.println(m.getKey() + ":" + m.getValue());
-        }
-        //2.迭代器
-        Iterator iterator2 = entrySet.iterator();
-        while (iterator2.hasNext()) {
-            Object entry = iterator2.next();
-            //向下转型为Map.Entry
-            Map.Entry m = (Map.Entry) entry;
-            System.out.println(m.getKey() + ":" + m.getValue());
-        }
-    }
-}
-```
-
-在`HashMap`源码中可以找到对应的实现部分。
-
-```java
-static class Node<K,V> implements Map.Entry<K,V> {
-    final int hash;
-    final K key;
-    V value;
-    Node<K,V> next;
-```
-
-#### 源码结构
-
-首先，在上面已经说过，`HashMap`中的每一个`k-v`形式的键值对都是存在于其静态内部类`Node`中的，为了方便对其进行遍历，还会创建一个`EntrySet`集合，该集合存放的元素类型是一个`Entry`。而一个`Entry`对象就有`key`和`value`，即`EntrySet<Entry<K,V>>`,源码中对应的定义如下：
-
-```java
-transient Set<Map.Entry<K,V>> entrySet;
-public Set<Map.Entry<K,V>> entrySet() {
-    Set<Map.Entry<K,V>> es;
-    return (es = entrySet) == null ? (entrySet = new EntrySet()) : es;
-}
-```
-
-但其实key和value并不是存在于`Set<Entry<K,V>>`中，它只是在该set集合中对`k-v`作了一个引用，使得`Node`节点中的`k-v`分别指向`Set`集合中的`K-V`,这么做还是出于方便对集合的遍历操作。
-
-> 在entrySet中，定义的类型是`Map.Entry`,但是实际上存放的还是`HashMap$Node`。因为`HashMap$Node`实现了`Map.Entry`接口。
->
-> 能遍历的原因是因为在`Entry`中提供了两个很重要的方法，分别是`getKey`和`getValue`这一点在`Map`接口中能得到验证。
-
-```java
-//Entry在Map接口中的定义
-    interface Entry<K,V> {
-    /**
-         * Returns the key corresponding to this entry.
-         *
-         * @return the key corresponding to this entry
-         * @throws IllegalStateException implementations may, but are not
-         *         required to, throw this exception if the entry has been
-         *         removed from the backing map.
-         */
-    K getKey();
-
-    /**
-         * Returns the value corresponding to this entry.  If the mapping
-         * has been removed from the backing map (by the iterator's
-         * <tt>remove</tt> operation), the results of this call are undefined.
-         *
-         * @return the value corresponding to this entry
-         * @throws IllegalStateException implementations may, but are not
-         *         required to, throw this exception if the entry has been
-         *         removed from the backing map.
-         */
-    V getValue();
-```
-
-所以可以使用下面的方式获取到集合中的`key-value`的值。
-
-```java
-HashMap map = new HashMap();
-map.put("1","李四");
-map.put("2","张三");
-System.out.println(map);
-
-Set set = map.entrySet();
-System.out.println(set.getClass());
-for(Object obj:set){
-    //向下转型
-    Map.Entry entry = (Map.Entry) obj;
-    System.out.println(entry.getKey() + "-" + entry.getValue());
-	}
-}
-```
 
 未完待续……
+
