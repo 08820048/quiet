@@ -1,17 +1,24 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const linksModule = await import('../content/pages/links.md');
+const LinksContent = linksModule.Content;
+const frontmatter =
+  linksModule.frontmatter && typeof linksModule.frontmatter === 'object'
+    ? linksModule.frontmatter
+    : {};
+const pageTitle =
+  typeof frontmatter.title === 'string'
+    ? frontmatter.title
+    : 'Links - Minimal Markdown Blog';
+const pageDescription =
+  typeof frontmatter.description === 'string'
+    ? frontmatter.description
+    : 'Useful links.';
 ---
 
-<BaseLayout title="Links - Minimal Markdown Blog" description="Useful links.">
-  <h1 class="page-title">Links</h1>
+<BaseLayout title={pageTitle} description={pageDescription}>
   <section class="page-section">
-    <ul>
-      <li>
-        <a href="https://astro.build" target="_blank" rel="noreferrer">Astro</a>
-      </li>
-      <li>
-        <a href="https://vercel.com" target="_blank" rel="noreferrer">Vercel</a>
-      </li>
-    </ul>
+    <LinksContent />
   </section>
 </BaseLayout>

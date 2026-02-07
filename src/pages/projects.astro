@@ -1,17 +1,24 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const projectsModule = await import('../content/pages/projects.md');
+const ProjectsContent = projectsModule.Content;
+const frontmatter =
+  projectsModule.frontmatter && typeof projectsModule.frontmatter === 'object'
+    ? projectsModule.frontmatter
+    : {};
+const pageTitle =
+  typeof frontmatter.title === 'string'
+    ? frontmatter.title
+    : 'Products - Minimal Markdown Blog';
+const pageDescription =
+  typeof frontmatter.description === 'string'
+    ? frontmatter.description
+    : 'Personal products and tools.';
 ---
 
-<BaseLayout title="Projects - Minimal Markdown Blog" description="Personal projects and open source work.">
-  <h1 class="page-title">Projects</h1>
+<BaseLayout title={pageTitle} description={pageDescription}>
   <section class="page-section">
-    <ul>
-      <li>
-        <strong>Minimal Blog</strong>: A personal tech blog built with Astro + Markdown.
-      </li>
-      <li>
-        <strong>Toolbox</strong>: A collection of daily development scripts and utilities.
-      </li>
-    </ul>
+    <ProjectsContent />
   </section>
 </BaseLayout>
