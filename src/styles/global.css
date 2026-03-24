@@ -240,8 +240,8 @@ body:not(.home-page) .site-search {
 
 .post-list-item {
   display: flex;
-  gap: 8px;
-  align-items: baseline;
+  gap: 10px;
+  align-items: flex-start;
 }
 
 .post-item-icon {
@@ -249,11 +249,28 @@ body:not(.home-page) .site-search {
   height: 14px;
   color: var(--muted);
   flex: 0 0 auto;
-  transform: translateY(1px);
+  transform: translateY(4px);
+}
+
+.post-list-content {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .post-link {
   font-size: 18px;
+  min-width: 0;
+}
+
+.post-list-date {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 .post h2 {
@@ -537,6 +554,12 @@ body.post-detail-page .back-to-top.is-visible {
 
   .post h2 {
     font-size: 20px;
+  }
+
+  .post-list-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
   }
 
   .post-pagination {

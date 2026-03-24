@@ -1,14 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
-import InfiniteScroll from 'react-infinite-scroll-component';
+import { useEffect, useMemo, useState } from "react";
+import InfiniteScroll from "react-infinite-scroll-component";
 
 const PAGE_SIZE = 24;
 
 /** Render a minimal infinite-scrolling list of posts */
 export default function InfinitePostList({ posts }) {
   const [query, setQuery] = useState(
-    typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('q') ?? '' : ''
+    typeof window !== "undefined"
+      ? (new URLSearchParams(window.location.search).get("q") ?? "")
+      : "",
   );
-  const [visibleCount, setVisibleCount] = useState(Math.min(PAGE_SIZE, posts.length));
+  const [visibleCount, setVisibleCount] = useState(
+    Math.min(PAGE_SIZE, posts.length),
+  );
 
   const filteredPosts = useMemo(() => {
     const keyword = query.trim().toLowerCase();
@@ -20,11 +24,13 @@ export default function InfinitePostList({ posts }) {
 
   const visiblePosts = useMemo(
     () => filteredPosts.slice(0, visibleCount),
-    [filteredPosts, visibleCount]
+    [filteredPosts, visibleCount],
   );
 
   const loadMore = () => {
-    setVisibleCount((count) => Math.min(count + PAGE_SIZE, filteredPosts.length));
+    setVisibleCount((count) =>
+      Math.min(count + PAGE_SIZE, filteredPosts.length),
+    );
   };
 
   useEffect(() => {
@@ -33,12 +39,14 @@ export default function InfinitePostList({ posts }) {
 
   useEffect(() => {
     const handleSearchChange = (event) => {
-      const nextQuery = typeof event.detail?.query === 'string' ? event.detail.query : '';
+      const nextQuery =
+        typeof event.detail?.query === "string" ? event.detail.query : "";
       setQuery(nextQuery);
     };
 
-    window.addEventListener('globalsearchchange', handleSearchChange);
-    return () => window.removeEventListener('globalsearchchange', handleSearchChange);
+    window.addEventListener("globalsearchchange", handleSearchChange);
+    return () =>
+      window.removeEventListener("globalsearchchange", handleSearchChange);
   }, []);
 
   return (
@@ -61,13 +69,33 @@ export default function InfinitePostList({ posts }) {
                   viewBox="0 0 24 24"
                   aria-hidden="true"
                 >
-                  <path d="M7 3h7l5 5v13H7z" fill="none" stroke="currentColor" strokeWidth="1.7" />
-                  <path d="M14 3v5h5" fill="none" stroke="currentColor" strokeWidth="1.7" />
-                  <path d="M10 13h6M10 17h6" fill="none" stroke="currentColor" strokeWidth="1.7" />
+                  <path
+                    d="M7 3h7l5 5v13H7z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                  />
+                  <path
+                    d="M14 3v5h5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                  />
+                  <path
+                    d="M10 13h6M10 17h6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                  />
                 </svg>
-                <a className="post-link" href={post.url}>
-                  {post.title}
-                </a>
+                <div className="post-list-content">
+                  <a className="post-link" href={post.url}>
+                    {post.title}
+                  </a>
+                  <time className="post-list-date" dateTime={post.updatedAtISO}>
+                    {post.updatedAtLabel}
+                  </time>
+                </div>
               </li>
             ))}
           </ul>
