@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import mermaidClientUrl from '../client/mermaid-client.js?url';
 
 const { title, description, bodyClass } = Astro.props;
 const siteTitle = title ?? 'Minimal Markdown Blog';
@@ -30,6 +31,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com
         document.documentElement.dataset.theme = theme;
       })();
     </script>
+
+    <script type="module" src={mermaidClientUrl}></script>
   </head>
   <body class={bodyClass}>
     <header class="site-header">

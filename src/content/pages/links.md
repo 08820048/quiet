@@ -18,8 +18,7 @@ description: "Useful links."
 - [纯情](https://blog.xiaohack.org)
 - [简小派](https://jianlipai.com/)
 - [莫小语](https://tanzwei.github.io/)
-- [橘子君](http://121.37.249.79:81/)
+- [CatOi](https://catoi.cn)
 - [wmSafe博客](https://blog.wm404.com/)
 - [LiuCabbage](https://www.baocaige.top)
 - [十万个为什么](https://10why.net)
-
