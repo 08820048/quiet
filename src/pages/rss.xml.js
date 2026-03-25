@@ -1,7 +1,7 @@
 import rss from '@astrojs/rss';
 import path from 'node:path';
-import { stat } from 'node:fs/promises';
 import { resolvePostSlug } from '../utils/slug.js';
+import { resolvePostMetadata } from '../utils/postMetadata.js';
 
 /** 生成 RSS 条目 */
 export async function GET(context) {
@@ -17,31 +17,16 @@ export async function GET(context) {
       if (!filePath) {
         return null;
       }
-      const fileStat = await stat(filePath);
       const raw = await typed.rawContent();
       const frontmatter =
         typed.frontmatter && typeof typed.frontmatter === 'object' ? typed.frontmatter : {};
       const fileName = path.basename(filePath, path.extname(filePath));
-      const titleFromContent = raw
-        .split('\n')
-        .map((line) => line.trim())
-        .find((line) => line.startsWith('# '))
-        ?.replace(/^#\s+/, '');
-      const title =
-        (typeof frontmatter.title === 'string' ? frontmatter.title : undefined) ??
-        titleFromContent ??
-        fileName;
-      const pubDate =
-        frontmatter.date instanceof Date
-          ? frontmatter.date
-          : frontmatter.date
-            ? new Date(String(frontmatter.date))
-            : fileStat.mtime;
+      const { title, publishedAt, sortDate } = resolvePostMetadata(raw, frontmatter, fileName);
       const slug = resolvePostSlug(fileName);
 
       return {
         title,
-        pubDate,
+        pubDate: publishedAt ?? sortDate ?? new Date(0),
         description: typeof frontmatter.description === 'string' ? frontmatter.description : '',
         link: `/blog/${slug}`,
       };

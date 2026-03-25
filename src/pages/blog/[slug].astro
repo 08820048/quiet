@@ -1,8 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import path from 'node:path';
-import { stat } from 'node:fs/promises';
 import { resolvePostSlug } from '../../utils/slug.js';
+import { formatUtcLongDate, resolvePostMetadata } from '../../utils/postMetadata.js';
 
 type PostModule = {
   file: string;
@@ -18,41 +18,26 @@ export async function getStaticPaths() {
   const posts = await Promise.all(
     Object.entries(modules).map(async ([filePath, loader]) => {
       const mod = await loader();
-      const fileStat = await stat(mod.file);
       const raw = await mod.rawContent();
       const frontmatter =
         mod.frontmatter && typeof mod.frontmatter === 'object' ? mod.frontmatter : {};
       const fileName = path.basename(filePath, path.extname(filePath));
-      const titleFromContent = raw
-        .split('\n')
-        .map((line) => line.trim())
-        .find((line) => line.startsWith('# '))
-        ?.replace(/^#\s+/, '');
-      const title =
-        (typeof frontmatter.title === 'string' ? frontmatter.title : undefined) ??
-        titleFromContent ??
-        fileName;
-
-      const dateValue =
-        frontmatter.date instanceof Date
-          ? frontmatter.date
-          : frontmatter.date
-            ? new Date(String(frontmatter.date))
-            : fileStat.mtime;
+      const { title, publishedAt, sortDate } = resolvePostMetadata(raw, frontmatter, fileName);
 
       const slug = resolvePostSlug(fileName);
 
       return {
         filePath,
         title,
-        dateValue,
+        publishedAtISO: publishedAt?.toISOString() ?? null,
+        sortValue: sortDate?.valueOf() ?? 0,
         slug,
         url: `/blog/${slug}`,
       };
     })
   );
 
-  const sortedPosts = posts.sort((a, b) => b.dateValue.valueOf() - a.dateValue.valueOf());
+  const sortedPosts = posts.sort((a, b) => b.sortValue - a.sortValue);
 
   return sortedPosts.map((post, index) => {
     const previousPost = index > 0 ? sortedPosts[index - 1] : null;
@@ -63,7 +48,7 @@ export async function getStaticPaths() {
       props: {
         filePath: post.filePath,
         title: post.title,
-        dateISO: post.dateValue.toISOString(),
+        publishedDateISO: post.publishedAtISO,
         previousPost: previousPost ? { title: previousPost.title, url: previousPost.url } : null,
         nextPost: nextPost ? { title: nextPost.title, url: nextPost.url } : null,
       },
@@ -73,7 +58,7 @@ export async function getStaticPaths() {
 
 const modules = import.meta.glob('../../content/blog/*.md') as Record<string, () => Promise<PostModule>>;
 
-const { filePath, title, dateISO, previousPost, nextPost } = Astro.props;
+const { filePath, title, publishedDateISO, previousPost, nextPost } = Astro.props;
 const loader = modules[filePath];
 if (!loader) {
   throw new Error(`Post module not found for path: ${filePath}`);
@@ -81,11 +66,7 @@ if (!loader) {
 
 const mod = await loader();
 const Content = mod.Content;
-const publishedDate = new Date(dateISO).toLocaleDateString('en-US', {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
-});
+const publishedDate = publishedDateISO ? formatUtcLongDate(new Date(publishedDateISO)) : 'Unknown';
 ---
 
 <BaseLayout title={title} description={title} bodyClass="post-detail-page">

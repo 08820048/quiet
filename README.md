@@ -77,7 +77,7 @@ npm run typecheck
 ## Content Authoring
 
 - Add new posts under `src/content/blog`
-- The homepage sorts posts by file modification time
+- The homepage sorts posts by parsed article update dates, falling back to publish dates
 - Article detail pages are generated from the Markdown files
 
 ## License
