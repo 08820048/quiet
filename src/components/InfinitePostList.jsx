@@ -1,10 +1,40 @@
-import { useEffect, useMemo, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 
 const PAGE_SIZE = 24;
 
+const buildTokens = (value) =>
+  value
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
+
+const getMatchScore = (post, tokens) => {
+  let score = 0;
+  const title = post.title.toLowerCase();
+  const description = (post.description ?? "").toLowerCase();
+  const category = (post.category ?? "").toLowerCase();
+  const searchText = (post.searchText ?? "").toLowerCase();
+  const tags = Array.isArray(post.tags) ? post.tags.map((tag) => tag.toLowerCase()) : [];
+
+  tokens.forEach((token) => {
+    if (title.includes(token)) score += 8;
+    if (category.includes(token)) score += 4;
+    if (tags.some((tag) => tag.includes(token))) score += 5;
+    if (description.includes(token)) score += 3;
+    if (searchText.includes(token)) score += 1;
+  });
+
+  return score;
+};
+
 /** Render a minimal infinite-scrolling list of posts */
-export default function InfinitePostList({ posts }) {
+export default function InfinitePostList({
+  posts,
+  showPreview = false,
+  showResultSummary = false,
+}) {
   const [query, setQuery] = useState(
     typeof window !== "undefined"
       ? (new URLSearchParams(window.location.search).get("q") ?? "")
@@ -13,14 +43,27 @@ export default function InfinitePostList({ posts }) {
   const [visibleCount, setVisibleCount] = useState(
     Math.min(PAGE_SIZE, posts.length),
   );
+  const deferredQuery = useDeferredValue(query);
 
   const filteredPosts = useMemo(() => {
-    const keyword = query.trim().toLowerCase();
-    if (!keyword) {
+    const tokens = buildTokens(deferredQuery);
+    if (tokens.length === 0) {
       return posts;
     }
-    return posts.filter((post) => post.title.toLowerCase().includes(keyword));
-  }, [posts, query]);
+    return posts
+      .map((post) => ({
+        post,
+        score: getMatchScore(post, tokens),
+      }))
+      .filter((entry) => entry.score > 0)
+      .sort((a, b) => {
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        return (b.post.dateValue ?? 0) - (a.post.dateValue ?? 0);
+      })
+      .map((entry) => entry.post);
+  }, [deferredQuery, posts]);
 
   const visiblePosts = useMemo(
     () => filteredPosts.slice(0, visibleCount),
@@ -41,7 +84,9 @@ export default function InfinitePostList({ posts }) {
     const handleSearchChange = (event) => {
       const nextQuery =
         typeof event.detail?.query === "string" ? event.detail.query : "";
-      setQuery(nextQuery);
+      startTransition(() => {
+        setQuery(nextQuery);
+      });
     };
 
     window.addEventListener("globalsearchchange", handleSearchChange);
@@ -51,6 +96,12 @@ export default function InfinitePostList({ posts }) {
 
   return (
     <>
+      {showResultSummary ? (
+        <div className="infinite-summary">
+          <span>{filteredPosts.length} results</span>
+          {deferredQuery.trim() ? <span>for “{deferredQuery.trim()}”</span> : null}
+        </div>
+      ) : null}
       {filteredPosts.length === 0 ? (
         <div className="infinite-status">No matching articles.</div>
       ) : (
@@ -89,12 +140,37 @@ export default function InfinitePostList({ posts }) {
                   />
                 </svg>
                 <div className="post-list-content">
-                  <a className="post-link" href={post.url}>
-                    {post.title}
-                  </a>
-                  <time className="post-list-date" dateTime={post.updatedAtISO}>
-                    {post.updatedAtLabel}
-                  </time>
+                  <div className="post-list-heading">
+                    <a className="post-link" href={post.url}>
+                      {post.title}
+                    </a>
+                    <time className="post-list-date" dateTime={post.updatedAtISO}>
+                      {post.updatedAtLabel}
+                    </time>
+                  </div>
+                  {showPreview ? (
+                    <>
+                      <div className="post-list-meta">
+                        {post.category ? (
+                          <span className="meta-chip meta-chip-category">
+                            {post.category}
+                          </span>
+                        ) : null}
+                        <span className="meta-chip">{post.readingMinutes} min read</span>
+                        {(post.tags ?? []).slice(0, 4).map((tag) => (
+                          <span
+                            key={`${post.id}-${tag}`}
+                            className="meta-chip"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                      {post.description ? (
+                        <p className="post-list-description">{post.description}</p>
+                      ) : null}
+                    </>
+                  ) : null}
                 </div>
               </li>
             ))}

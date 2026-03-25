@@ -1,8 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import path from 'node:path';
-import { resolvePostSlug } from '../../utils/slug.js';
-import { formatUtcLongDate, resolvePostMetadata } from '../../utils/postMetadata.js';
+import { formatUtcLongDate } from '../../utils/postMetadata.js';
+import { getAllPosts, getRelatedPosts } from '../../utils/posts.js';
+import { slugifyText } from '../../utils/slug.js';
 
 type PostModule = {
   file: string;
@@ -13,74 +13,105 @@ type PostModule = {
 
 /** Build static routes and attach neighboring posts. */
 export async function getStaticPaths() {
-  const modules = import.meta.glob('../../content/blog/*.md') as Record<string, () => Promise<PostModule>>;
+  const posts = await getAllPosts();
+  const sortedPosts = [...posts];
 
-  const posts = await Promise.all(
-    Object.entries(modules).map(async ([filePath, loader]) => {
-      const mod = await loader();
-      const raw = await mod.rawContent();
-      const frontmatter =
-        mod.frontmatter && typeof mod.frontmatter === 'object' ? mod.frontmatter : {};
-      const fileName = path.basename(filePath, path.extname(filePath));
-      const { title, publishedAt, sortDate } = resolvePostMetadata(raw, frontmatter, fileName);
-
-      const slug = resolvePostSlug(fileName);
-
-      return {
-        filePath,
-        title,
-        publishedAtISO: publishedAt?.toISOString() ?? null,
-        sortValue: sortDate?.valueOf() ?? 0,
-        slug,
-        url: `/blog/${slug}`,
-      };
-    })
-  );
-
-  const sortedPosts = posts.sort((a, b) => b.sortValue - a.sortValue);
-
-  return sortedPosts.map((post, index) => {
+  return Promise.all(sortedPosts.map(async (post, index) => {
     const previousPost = index > 0 ? sortedPosts[index - 1] : null;
     const nextPost = index < sortedPosts.length - 1 ? sortedPosts[index + 1] : null;
+    const relatedPosts = await getRelatedPosts(post, 3);
 
     return {
       params: { slug: post.slug },
       props: {
-        filePath: post.filePath,
-        title: post.title,
-        publishedDateISO: post.publishedAtISO,
+        moduleKey: post.moduleKey,
+        post: {
+          title: post.title,
+          description: post.description,
+          category: post.category,
+          tags: post.tags,
+          readingMinutes: post.readingMinutes,
+          coverImage: post.coverImage,
+          publishedDateISO: post.publishedAt?.toISOString() ?? null,
+          updatedDateISO: post.updatedAt?.toISOString() ?? null,
+          url: post.url,
+        },
         previousPost: previousPost ? { title: previousPost.title, url: previousPost.url } : null,
         nextPost: nextPost ? { title: nextPost.title, url: nextPost.url } : null,
+        relatedPosts: relatedPosts.map((related) => ({
+          title: related.title,
+          url: related.url,
+          description: related.description,
+          updatedDateISO: (related.updatedAt ?? related.publishedAt ?? related.sortDate).toISOString(),
+        })),
       },
     };
-  });
+  }));
 }
 
 const modules = import.meta.glob('../../content/blog/*.md') as Record<string, () => Promise<PostModule>>;
 
-const { filePath, title, publishedDateISO, previousPost, nextPost } = Astro.props;
-const loader = modules[filePath];
+const { moduleKey, post, previousPost, nextPost, relatedPosts } = Astro.props;
+const normalizedModuleKey = String(moduleKey).replace('../content/blog/', '../../content/blog/');
+const loader = modules[normalizedModuleKey];
 if (!loader) {
-  throw new Error(`Post module not found for path: ${filePath}`);
+  throw new Error(`Post module not found for path: ${normalizedModuleKey}`);
 }
 
 const mod = await loader();
 const Content = mod.Content;
-const publishedDate = publishedDateISO ? formatUtcLongDate(new Date(publishedDateISO)) : 'Unknown';
+const publishedDate = post.publishedDateISO ? formatUtcLongDate(new Date(post.publishedDateISO)) : 'Unknown';
+const updatedDate = post.updatedDateISO ? formatUtcLongDate(new Date(post.updatedDateISO)) : null;
+const showUpdated = updatedDate && updatedDate !== publishedDate;
 ---
 
-<BaseLayout title={title} description={title} bodyClass="post-detail-page">
+<BaseLayout
+  title={post.title}
+  description={post.description}
+  bodyClass="post-detail-page"
+  seoType="article"
+  enableMermaid={true}
+  publishedTime={post.publishedDateISO}
+  modifiedTime={post.updatedDateISO ?? post.publishedDateISO}
+  keywords={post.tags}
+  imagePath={post.coverImage ?? undefined}
+>
   <article class="post post-detail">
-    <h1>{title}</h1>
+    <h1>{post.title}</h1>
     <div class="post-meta">
-      <span>Published</span>
-      {' '}
-      <span>{publishedDate}</span>
+      <span>Published {publishedDate}</span>
+      {showUpdated && <span>Updated {updatedDate}</span>}
+      {post.category && <span>{post.category}</span>}
+      <span>{post.readingMinutes} min read</span>
     </div>
+    {post.tags.length > 0 && (
+      <div class="post-tags">
+        {post.tags.map((tag: string) => (
+          <a class="post-tag" href={`/tags/${slugifyText(tag)}`}>#{tag}</a>
+        ))}
+      </div>
+    )}
+    {post.description && (
+      <p class="post-summary">{post.description}</p>
+    )}
     <div class="post-content">
       <Content />
     </div>
-
+    {relatedPosts.length > 0 && (
+      <section class="related-posts" aria-labelledby="related-posts-title">
+        <h2 id="related-posts-title">Related Posts</h2>
+        <ul class="related-posts-list">
+          {relatedPosts.map((relatedPost) => (
+            <li class="related-posts-item">
+              <a class="related-posts-link" href={relatedPost.url}>{relatedPost.title}</a>
+              {relatedPost.description && (
+                <p class="related-posts-description">{relatedPost.description}</p>
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
     {(previousPost || nextPost) && (
       <nav class="post-pagination" aria-label="Post navigation">
         <div class="post-pagination-item post-pagination-prev">

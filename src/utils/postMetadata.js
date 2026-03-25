@@ -10,6 +10,12 @@ const longDateFormatter = new Intl.DateTimeFormat('en-US', {
 
 const pad = (value) => String(value).padStart(2, '0');
 
+const stripCommentMarkup = (value) =>
+  String(value)
+    .replace(/^<!--\s*/, '')
+    .replace(/\s*-->$/, '')
+    .trim();
+
 const normalizeDateParts = (value) => {
   const match = String(value).trim().match(SHORT_DATE_PATTERN);
   if (!match) {
@@ -53,14 +59,14 @@ const parseDateValue = (value) => {
   );
 };
 
-const findInlineMetaDate = (raw, label) => {
+export const findInlineMetaText = (raw, label) => {
   const markdownPattern = new RegExp(
     String.raw`^\s*\*\*${label}\*\*[：:]\s*(.+)$`,
     'm'
   );
   const markdownMatch = raw.match(markdownPattern);
   if (markdownMatch) {
-    return parseDateValue(markdownMatch[1]);
+    return markdownMatch[1].trim();
   }
 
   const commentPattern = new RegExp(
@@ -69,10 +75,15 @@ const findInlineMetaDate = (raw, label) => {
   );
   const commentMatch = raw.match(commentPattern);
   if (commentMatch) {
-    return parseDateValue(commentMatch[1]);
+    return stripCommentMarkup(commentMatch[1]);
   }
 
   return null;
+};
+
+const findInlineMetaDate = (raw, label) => {
+  const value = findInlineMetaText(raw, label);
+  return value ? parseDateValue(value) : null;
 };
 
 const findUpdateLogDate = (raw) => {
@@ -127,6 +138,80 @@ export const resolvePostTitle = (raw, frontmatter = {}, fallbackTitle) => {
   );
 };
 
+const splitTagList = (value) =>
+  String(value)
+    .split(/[，,]/)
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+
+export const stripMarkdown = (raw) =>
+  String(raw)
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`[^`]*`/g, ' ')
+    .replace(/!\[[^\]]*]\([^)]+\)/g, ' ')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^>\s?/gm, '')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/[*_~]+/g, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\|/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const resolveSummary = (raw, frontmatter = {}) => {
+  const frontmatterSummary =
+    typeof frontmatter.description === 'string' ? frontmatter.description.trim() : null;
+  const inlineSummary = findInlineMetaText(raw, '摘要');
+  if (frontmatterSummary) {
+    return frontmatterSummary;
+  }
+  if (inlineSummary) {
+    return inlineSummary;
+  }
+
+  const text = stripMarkdown(raw);
+  return text ? text.slice(0, 180) : '';
+};
+
+const resolveCategory = (raw, frontmatter = {}) => {
+  if (typeof frontmatter.category === 'string' && frontmatter.category.trim()) {
+    return frontmatter.category.trim();
+  }
+  return findInlineMetaText(raw, '分类') ?? '';
+};
+
+const resolveTags = (raw, frontmatter = {}) => {
+  if (Array.isArray(frontmatter.tags)) {
+    return frontmatter.tags.map((tag) => String(tag).trim()).filter(Boolean);
+  }
+
+  const inlineTags = findInlineMetaText(raw, '标签');
+  return inlineTags ? splitTagList(inlineTags) : [];
+};
+
+const resolveCoverImage = (raw, frontmatter = {}) => {
+  if (typeof frontmatter.image === 'string' && frontmatter.image.trim()) {
+    return frontmatter.image.trim();
+  }
+  const match = raw.match(/!\[[^\]]*]\(([^)\s]+)(?:\s+"[^"]*")?\)/);
+  return match ? match[1] : null;
+};
+
+export const estimateReadingMinutes = (text) => {
+  const normalized = stripMarkdown(text);
+  if (!normalized) {
+    return 1;
+  }
+
+  const cjkCount = (normalized.match(/[\u3400-\u9fff]/g) ?? []).length;
+  const latinWords = normalized
+    .replace(/[\u3400-\u9fff]/g, ' ')
+    .match(/[A-Za-z0-9_]+(?:['’-][A-Za-z0-9_]+)*/g);
+  const units = cjkCount + (latinWords?.length ?? 0);
+  return Math.max(1, Math.round(units / 320));
+};
+
 export const resolvePostDates = (raw, frontmatter = {}) => {
   const frontmatterPublished = parseDateValue(frontmatter.date);
   const frontmatterUpdated = parseDateValue(frontmatter.updated);
@@ -147,6 +232,12 @@ export const resolvePostDates = (raw, frontmatter = {}) => {
 
 export const resolvePostMetadata = (raw, frontmatter = {}, fallbackTitle) => ({
   title: resolvePostTitle(raw, frontmatter, fallbackTitle),
+  description: resolveSummary(raw, frontmatter),
+  category: resolveCategory(raw, frontmatter),
+  tags: resolveTags(raw, frontmatter),
+  coverImage: resolveCoverImage(raw, frontmatter),
+  plainText: stripMarkdown(raw),
+  readingMinutes: estimateReadingMinutes(raw),
   ...resolvePostDates(raw, frontmatter),
 });
 

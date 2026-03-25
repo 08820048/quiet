@@ -9,7 +9,21 @@ function ready(fn) {
 function initThemeAndSearch() {
   const themeToggle = document.getElementById("theme-toggle");
   const headerSearch = document.getElementById("header-search");
-  const isHomePage = document.body.classList.contains("home-page");
+  const hasSearch = document.body.classList.contains("has-search");
+  const syncSearch = (value) => {
+    window.dispatchEvent(
+      new CustomEvent("globalsearchchange", {
+        detail: { query: value },
+      }),
+    );
+  };
+  const isTypingTarget = (target) =>
+    target instanceof HTMLElement &&
+    Boolean(
+      target.closest(
+        'input, textarea, select, [contenteditable="true"], [contenteditable=""]',
+      ),
+    );
 
   const applyTheme = (theme) => {
     const resolvedTheme = theme === "dark" ? "dark" : "light";
@@ -30,37 +44,57 @@ function initThemeAndSearch() {
     });
   }
 
-  if (!headerSearch) return;
+  if (headerSearch && hasSearch) {
+    const initialQuery =
+      new URLSearchParams(window.location.search).get("q") ?? "";
+    headerSearch.value = initialQuery;
+    syncSearch(initialQuery);
 
-  if (!isHomePage) {
-    headerSearch.value = "";
-    headerSearch.setAttribute("disabled", "true");
-    return;
+    headerSearch.addEventListener("input", (event) => {
+      const query = event.currentTarget.value;
+      const url = new URL(window.location.href);
+      if (query.trim()) {
+        url.searchParams.set("q", query);
+      } else {
+        url.searchParams.delete("q");
+      }
+      window.history.replaceState({}, "", url.toString());
+      syncSearch(query);
+    });
+
+    headerSearch.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        if (headerSearch.value) {
+          headerSearch.value = "";
+          const url = new URL(window.location.href);
+          url.searchParams.delete("q");
+          window.history.replaceState({}, "", url.toString());
+          syncSearch("");
+        } else {
+          headerSearch.blur();
+        }
+      }
+    });
   }
 
-  const syncSearch = (value) => {
-    window.dispatchEvent(
-      new CustomEvent("globalsearchchange", {
-        detail: { query: value },
-      }),
-    );
-  };
-
-  const initialQuery =
-    new URLSearchParams(window.location.search).get("q") ?? "";
-  headerSearch.value = initialQuery;
-  syncSearch(initialQuery);
-
-  headerSearch.addEventListener("input", (event) => {
-    const query = event.currentTarget.value;
-    const url = new URL(window.location.href);
-    if (query.trim()) {
-      url.searchParams.set("q", query);
-    } else {
-      url.searchParams.delete("q");
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) {
+      return;
     }
-    window.history.replaceState({}, "", url.toString());
-    syncSearch(query);
+    if (isTypingTarget(event.target)) {
+      return;
+    }
+    event.preventDefault();
+
+    if (headerSearch && hasSearch) {
+      headerSearch.focus();
+      headerSearch.select();
+      return;
+    }
+
+    const url = new URL("/search", window.location.origin);
+    window.location.assign(url.toString());
   });
 }
 

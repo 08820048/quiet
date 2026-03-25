@@ -1,0 +1,41 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostDirectory from '../../components/PostDirectory.astro';
+import { getTagEntries, getTagEntryBySlug } from '../../utils/posts.js';
+
+export async function getStaticPaths() {
+  const tags = await getTagEntries();
+  return tags.map((tag) => ({
+    params: { tag: tag.slug },
+    props: {
+      tagName: tag.name,
+    },
+  }));
+}
+
+const { tag } = Astro.params;
+const { tagName } = Astro.props;
+const tagEntry = await getTagEntryBySlug(tag);
+
+if (!tagEntry) {
+  throw new Error(`Tag not found: ${tag}`);
+}
+---
+
+<BaseLayout
+  title={`Tag: ${tagName}`}
+  description={`Posts tagged with ${tagName}.`}
+  bodyClass="tag-detail-page"
+>
+  <section class="archive-hero">
+    <p class="eyebrow">Tag</p>
+    <h1 class="page-title">#{tagEntry.name}</h1>
+    <p class="intro-text">
+      {tagEntry.count}
+      {' '}
+      posts in this topic cluster.
+    </p>
+  </section>
+
+  <PostDirectory posts={tagEntry.posts} emptyMessage="No posts found for this tag." />
+</BaseLayout>

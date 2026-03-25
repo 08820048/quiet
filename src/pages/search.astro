@@ -1,0 +1,45 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import InfinitePostList from '../components/InfinitePostList.jsx';
+import { formatUtcDate } from '../utils/postMetadata.js';
+import { getAllPosts } from '../utils/posts.js';
+
+const posts = (await getAllPosts()).map((post) => {
+  const listDate = post.updatedAt ?? post.publishedAt ?? post.sortDate;
+  return {
+    id: post.id,
+    title: post.title,
+    url: post.url,
+    category: post.category,
+    tags: post.tags,
+    description: post.description,
+    readingMinutes: post.readingMinutes,
+    searchText: post.searchText,
+    dateValue: post.sortValue,
+    updatedAtISO: listDate?.toISOString() ?? '',
+    updatedAtLabel: formatUtcDate(listDate),
+  };
+});
+---
+
+<BaseLayout
+  title="Search"
+  description="Search posts by title, summary, tag, or category."
+  bodyClass="search-page has-search"
+  showSearch={true}
+>
+  <section class="archive-hero">
+    <p class="eyebrow">Search</p>
+    <h1 class="page-title">Search titles, tags, and summaries.</h1>
+    <p class="intro-text">
+      Slash key focuses search. Results rank title hits above summary matches.
+    </p>
+  </section>
+
+  <InfinitePostList
+    posts={posts}
+    showPreview={true}
+    showResultSummary={true}
+    client:load
+  />
+</BaseLayout>

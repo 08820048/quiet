@@ -1,59 +1,54 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import InfinitePostList from '../components/InfinitePostList.jsx';
-import path from 'node:path';
-import { resolvePostSlug } from '../utils/slug.js';
-import { formatUtcDate, resolvePostMetadata } from '../utils/postMetadata.js';
+import { formatUtcDate } from '../utils/postMetadata.js';
+import { getAllPosts, getTagEntries } from '../utils/posts.js';
+import { SITE_DESCRIPTION } from '../utils/site.js';
 
-const modules = import.meta.glob('../content/blog/*.md', { eager: true }) as Record<
-  string,
-  {
-    file: string;
-    frontmatter?: Record<string, unknown>;
-    rawContent: () => Promise<string>;
-    compiledContent: () => Promise<string>;
-  }
->;
+const [posts, tagEntries] = await Promise.all([getAllPosts(), getTagEntries()]);
 
-const posts = await Promise.all(
-  Object.values(modules).map(async (mod) => {
-    const filePath = mod.file;
-    const raw = await mod.rawContent();
-    const frontmatter = (mod.frontmatter ?? {}) as Record<string, unknown>;
-    const fileName = path.basename(filePath, path.extname(filePath));
-    const { title, updatedAt, sortDate } = resolvePostMetadata(raw, frontmatter, fileName);
-    const slug = resolvePostSlug(fileName);
-    const listDate = updatedAt ?? sortDate;
-
-    return {
-      id: fileName,
-      title,
-      dateValue: sortDate?.valueOf() ?? 0,
-      updatedAtISO: listDate?.toISOString() ?? '',
-      updatedAtLabel: formatUtcDate(listDate),
-      url: `/blog/${slug}`,
-    };
-  })
-);
-
-const sorted = posts.sort((a, b) => b.dateValue - a.dateValue);
+const sorted = posts.map((post) => {
+  const listDate = post.updatedAt ?? post.publishedAt ?? post.sortDate;
+  return {
+    id: post.id,
+    title: post.title,
+    url: post.url,
+    category: post.category,
+    tags: post.tags,
+    description: post.description,
+    readingMinutes: post.readingMinutes,
+    searchText: post.searchText,
+    dateValue: post.sortValue,
+    updatedAtISO: listDate?.toISOString() ?? '',
+    updatedAtLabel: formatUtcDate(listDate),
+  };
+});
 ---
 
 <BaseLayout
-  title="Hi,Im XuYi, this is my blog."
-  description="A minimal technical blog."
-  bodyClass="home-page"
+  title="Minimal, fast, geeky developer notes"
+  description={SITE_DESCRIPTION}
+  bodyClass="home-page has-search"
+  showSearch={true}
 >
   <section class="intro">
-    <h1 class="intro-title">Hi,Im XuYi, this is my blog.</h1>
+    <p class="eyebrow">Quiet</p>
+    <h1 class="intro-title">Minimal, fast, geeky developer notes.</h1>
     <p class="intro-text">
-      Indie dev | Rust fan | Built Welight:
+      Indie dev, Rust fan, and tool builder. Shipping Welight:
       <a href="https://waer.ltd" target="_blank" rel="noreferrer">https://waer.ltd</a>
     </p>
     <p class="intro-text">
-      and a lightweight Markdown editor for technical writing →
+      plus Ornata, a lightweight Markdown editor for technical writing →
       <a href="https://ornata.app" target="_blank" rel="noreferrer">https://ornata.app</a>
     </p>
+    <div class="home-stats" aria-label="Site stats">
+      <span class="meta-chip">{sorted.length} posts</span>
+      <span class="meta-chip">{tagEntries.length} tags</span>
+      <a class="meta-chip meta-chip-link" href="/archive">Archive</a>
+      <a class="meta-chip meta-chip-link" href="/tags">Tags</a>
+      <a class="meta-chip meta-chip-link" href="/rss.xml">RSS</a>
+    </div>
   </section>
   <h2 class="page-title">Latest Posts</h2>
   <InfinitePostList posts={sorted} client:load />

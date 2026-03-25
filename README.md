@@ -2,19 +2,21 @@
 
 Quiet is a minimal personal blog built with Astro and Markdown.
 
-It focuses on fast static delivery, simple content authoring, and a clean reading experience with dark mode, Mermaid diagrams, KaTeX math, infinite post loading, image preview, and article search.
+It focuses on fast static delivery, simple content authoring, and a clean reading experience with archive navigation, tag discovery, dark mode, Mermaid diagrams, KaTeX math, image preview, and client-side search.
 
 ## Features
 
 - Markdown-based blog posts stored in `src/content/blog`
+- Shared post metadata parser for title, summary, tags, category, publish/update dates, and reading time
 - Astro static site generation
-- React-powered infinite post list on the homepage
+- React-powered post search on the homepage and `/search`
+- Archive and tag index pages for content navigation
 - Mermaid rendering in article detail pages
 - KaTeX math support
 - Dark and light theme switching
 - Click-to-preview images in article pages
 - Floating back-to-top button on article detail pages
-- RSS and sitemap generation
+- RSS, sitemap, robots.txt, JSON-LD, and Open Graph metadata
 
 ## Stack
 
@@ -77,7 +79,7 @@ npm run typecheck
 ## Content Authoring
 
 - Add new posts under `src/content/blog`
-- The homepage sorts posts by parsed article update dates, falling back to publish dates
+- The homepage, archive, search, RSS, and sitemap all use the shared parsed post metadata
 - Article detail pages are generated from the Markdown files
 
 ## License

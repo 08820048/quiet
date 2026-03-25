@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <rect width="1200" height="630" fill="#050505"/>
+  <rect x="40" y="40" width="1120" height="550" rx="24" fill="#0F0F0F" stroke="#2A2A2A"/>
+  <rect x="80" y="90" width="120" height="18" rx="9" fill="#1F1F1F"/>
+  <rect x="80" y="150" width="1040" height="1" fill="#2A2A2A"/>
+  <text x="80" y="270" fill="#F5F5F5" font-size="78" font-family="Geist Mono, monospace" font-weight="700">Quiet</text>
+  <text x="80" y="342" fill="#8CB4FF" font-size="30" font-family="Geist Mono, monospace">Minimal, fast, geeky developer notes.</text>
+  <text x="80" y="440" fill="#8A8A8A" font-size="24" font-family="Geist Mono, monospace">/archive  /search  /rss.xml</text>
+</svg>

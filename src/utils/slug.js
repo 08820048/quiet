@@ -9,8 +9,8 @@ const fnv1a32 = (input) => {
   return (hash >>> 0).toString(16).padStart(8, '0');
 };
 
-export const resolvePostSlug = (fileName) => {
-  const raw = String(fileName).trim().toLowerCase();
+export const slugifyText = (value) => {
+  const raw = String(value).trim().toLowerCase();
   const asciiBase = raw
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -23,3 +23,5 @@ export const resolvePostSlug = (fileName) => {
   }
   return base;
 };
+
+export const resolvePostSlug = (fileName) => slugifyText(fileName);

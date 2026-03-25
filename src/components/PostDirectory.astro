@@ -1,0 +1,51 @@
+---
+import { formatUtcDate } from '../utils/postMetadata.js';
+import { slugifyText } from '../utils/slug.js';
+
+type DirectoryPost = {
+  url: string;
+  title: string;
+  category?: string;
+  tags: string[];
+  description?: string;
+  readingMinutes: number;
+  updatedAt?: Date | null;
+  publishedAt?: Date | null;
+  sortDate: Date;
+};
+
+const {
+  posts = [],
+  emptyMessage = 'No posts yet.',
+}: { posts?: DirectoryPost[]; emptyMessage?: string } = Astro.props;
+---
+
+{posts.length === 0 ? (
+  <p class="directory-empty">{emptyMessage}</p>
+) : (
+  <ul class="directory-list">
+    {posts.map((post: DirectoryPost) => {
+      const displayDate = post.updatedAt ?? post.publishedAt ?? post.sortDate;
+      return (
+        <li class="directory-item">
+          <div class="directory-topline">
+            <a class="directory-link" href={post.url}>{post.title}</a>
+            <time class="directory-date" datetime={displayDate?.toISOString() ?? ''}>
+              {formatUtcDate(displayDate)}
+            </time>
+          </div>
+          <div class="directory-meta">
+            {post.category && <span class="meta-chip meta-chip-category">{post.category}</span>}
+            <span class="meta-chip">{post.readingMinutes} min read</span>
+            {post.tags.map((tag: string) => (
+              <a class="meta-chip meta-chip-link" href={`/tags/${slugifyText(tag)}`}>
+                #{tag}
+              </a>
+            ))}
+          </div>
+          {post.description && <p class="directory-description">{post.description}</p>}
+        </li>
+      );
+    })}
+  </ul>
+)}

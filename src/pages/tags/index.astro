@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getTagEntries } from '../../utils/posts.js';
+
+const tags = await getTagEntries();
+---
+
+<BaseLayout
+  title="Tags"
+  description="Browse the blog by tag."
+  bodyClass="tags-page"
+>
+  <section class="archive-hero">
+    <p class="eyebrow">Tags</p>
+    <h1 class="page-title">Topic clusters, not just a flat feed.</h1>
+    <p class="intro-text">
+      {tags.length}
+      {' '}
+      tags extracted from the current post archive.
+    </p>
+  </section>
+
+  <div class="tag-grid">
+    {tags.map((tag) => (
+      <a class="tag-card" href={`/tags/${tag.slug}`}>
+        <span class="tag-card-name">#{tag.name}</span>
+        <span class="tag-card-count">{tag.count} posts</span>
+      </a>
+    ))}
+  </div>
+</BaseLayout>

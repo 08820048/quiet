@@ -2,22 +2,127 @@
 import '../styles/global.css';
 import mermaidClientUrl from '../client/mermaid-client.js?url';
 import siteUiClientUrl from '../client/site-ui.js?url';
+import {
+  DEFAULT_OG_IMAGE_PATH,
+  NAV_ITEMS,
+  SEARCH_PLACEHOLDER,
+  SITE_AUTHOR,
+  SITE_DESCRIPTION,
+  SITE_LOCALE,
+  SITE_NAME,
+  SITE_OG_LOCALE,
+  getAbsoluteUrl,
+  getSiteOrigin,
+} from '../utils/site.js';
 
-const { title, description, bodyClass } = Astro.props;
-const siteTitle = title ?? 'Minimal Markdown Blog';
-const siteDescription = description ?? 'A minimal technical blog powered by Markdown.';
-const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com');
+const {
+  title,
+  description,
+  bodyClass = '',
+  showSearch = false,
+  enableMermaid = false,
+  seoType = 'website',
+  publishedTime,
+  modifiedTime,
+  keywords = [],
+  imagePath = DEFAULT_OG_IMAGE_PATH,
+  schema,
+} = Astro.props;
+
+const siteOrigin = getSiteOrigin(Astro.site);
+const siteTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
+const siteDescription = description ?? SITE_DESCRIPTION;
+const canonical = getAbsoluteUrl(Astro.url.pathname, siteOrigin);
+const ogImage = getAbsoluteUrl(imagePath, siteOrigin);
+const resolvedKeywords = Array.isArray(keywords)
+  ? keywords.map((keyword) => String(keyword).trim()).filter(Boolean)
+  : [];
+const pathname = Astro.url.pathname;
+
+const defaultSchema =
+  seoType === 'article'
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: title ?? SITE_NAME,
+        description: siteDescription,
+        url: canonical.toString(),
+        image: ogImage.toString(),
+        inLanguage: SITE_LOCALE,
+        author: {
+          '@type': 'Person',
+          name: SITE_AUTHOR.name,
+          url: SITE_AUTHOR.url,
+        },
+        publisher: {
+          '@type': 'Person',
+          name: SITE_AUTHOR.name,
+          url: SITE_AUTHOR.url,
+        },
+        datePublished: publishedTime,
+        dateModified: modifiedTime ?? publishedTime,
+        keywords: resolvedKeywords.join(', ') || undefined,
+      }
+    : {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: SITE_NAME,
+        description: SITE_DESCRIPTION,
+        url: siteOrigin.toString(),
+        inLanguage: SITE_LOCALE,
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: `${siteOrigin.toString().replace(/\/$/, '')}/search?q={search_term_string}`,
+          'query-input': 'required name=search_term_string',
+        },
+      };
+const headSchema = schema ?? defaultSchema;
 ---
 
 <!doctype html>
-<html lang="en-US" data-theme="light">
+<html lang={SITE_LOCALE} data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{siteTitle}</title>
     <meta name="description" content={siteDescription} />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="canonical" href={canonical.toString()} />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={`${SITE_NAME} RSS`}
+      href={getAbsoluteUrl('/rss.xml', siteOrigin).toString()}
+    />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:locale" content={SITE_OG_LOCALE} />
+    <meta property="og:type" content={seoType === 'article' ? 'article' : 'website'} />
+    <meta property="og:title" content={siteTitle} />
+    <meta property="og:description" content={siteDescription} />
+    <meta property="og:url" content={canonical.toString()} />
+    <meta property="og:image" content={ogImage.toString()} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={siteTitle} />
+    <meta name="twitter:description" content={siteDescription} />
+    <meta name="twitter:image" content={ogImage.toString()} />
+    {resolvedKeywords.length > 0 && (
+      <meta name="keywords" content={resolvedKeywords.join(', ')} />
+    )}
+    {seoType === 'article' && publishedTime && (
+      <meta property="article:published_time" content={publishedTime} />
+    )}
+    {seoType === 'article' && modifiedTime && (
+      <meta property="article:modified_time" content={modifiedTime} />
+    )}
+    {resolvedKeywords.map((keyword) => (
+      <meta property="article:tag" content={keyword} />
+    ))}
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(headSchema)} />
     <script
+      is:inline
       defer
       src="https://cloud.umami.is/script.js"
       data-website-id="3b459ab1-1907-468c-bcbe-58e26c627f51"
@@ -33,24 +138,41 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com
       })();
     </script>
 
-    <script type="module" src={mermaidClientUrl}></script>
-    <script type="module" src={siteUiClientUrl}></script>
+    <script is:inline type="module" src={siteUiClientUrl}></script>
+    {enableMermaid && <script is:inline type="module" src={mermaidClientUrl}></script>}
   </head>
   <body class={bodyClass}>
     <header class="site-header">
       <nav class="site-nav">
-        <a href="/">Home</a>
-        <a href="/projects">Products</a>
-        <a href="/links">Links</a>
-        <div class="site-search">
-          <input
-            id="header-search"
-            type="search"
-            class="site-search-input"
-            placeholder="Search articles..."
-            aria-label="Search articles"
-          />
+        <a class="site-brand" href="/">Quiet</a>
+        <div class="site-nav-links">
+          {NAV_ITEMS.map((item) => {
+            const isActive =
+              item.href === '/'
+                ? pathname === '/'
+                : item.href.endsWith('.xml')
+                  ? pathname === item.href
+                  : pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+            return (
+              <a class:list={['site-nav-link', { 'is-active': isActive }]} href={item.href}>
+                {item.label}
+              </a>
+            );
+          })}
         </div>
+        {showSearch && (
+          <div class="site-search">
+            <span class="site-search-shortcut" aria-hidden="true">/</span>
+            <input
+              id="header-search"
+              type="search"
+              class="site-search-input"
+              placeholder={SEARCH_PLACEHOLDER}
+              aria-label={SEARCH_PLACEHOLDER}
+            />
+          </div>
+        )}
         <div class="site-controls">
           <button
             id="theme-toggle"
@@ -67,7 +189,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com
     </main>
     <footer class="site-footer">
       <div class="site-footer-content">
-        <p>© 2026 Quiet. Made with love by XuYi</p>
+        <p>© 2026 Quiet. Built by XuYi.</p>
         <div class="site-social-links" aria-label="Social links">
           <a
             class="site-social-link"

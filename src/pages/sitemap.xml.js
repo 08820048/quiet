@@ -1,5 +1,5 @@
-import path from 'node:path';
-import { resolvePostSlug } from '../utils/slug.js';
+import { getAllPosts, getTagEntries } from '../utils/posts.js';
+import { getSiteOrigin } from '../utils/site.js';
 
 const escapeXml = (value) =>
   value
@@ -10,22 +10,36 @@ const escapeXml = (value) =>
     .replace(/'/g, '&apos;');
 
 export async function GET(context) {
-  const site = context.site ?? new URL('https://example.com');
-  const staticPaths = ['/', '/projects', '/links', '/rss.xml'];
+  const site = getSiteOrigin(context.site);
+  const [posts, tags] = await Promise.all([getAllPosts(), getTagEntries()]);
 
-  const blogModules = import.meta.glob('../content/blog/*.md', { eager: true });
-  const blogPaths = Object.values(blogModules).map((mod) => {
-    const fileName = path.basename(mod.file, path.extname(mod.file));
-    const slug = resolvePostSlug(fileName);
-    return `/blog/${slug}`;
-  });
+  const staticPaths = [
+    { pathname: '/', lastmod: posts[0]?.sortDate },
+    { pathname: '/archive', lastmod: posts[0]?.sortDate },
+    { pathname: '/search', lastmod: posts[0]?.sortDate },
+    { pathname: '/tags', lastmod: posts[0]?.sortDate },
+    { pathname: '/projects' },
+    { pathname: '/links' },
+    { pathname: '/rss.xml', lastmod: posts[0]?.sortDate },
+  ];
 
-  const allPaths = [...new Set([...staticPaths, ...blogPaths])];
+  const blogPaths = posts.map((post) => ({
+    pathname: post.url,
+    lastmod: post.updatedAt ?? post.publishedAt ?? post.sortDate,
+  }));
+
+  const tagPaths = tags.map((tag) => ({
+    pathname: `/tags/${tag.slug}`,
+    lastmod: tag.posts[0]?.updatedAt ?? tag.posts[0]?.publishedAt ?? tag.posts[0]?.sortDate,
+  }));
+
+  const allPaths = [...staticPaths, ...blogPaths, ...tagPaths];
 
   const urls = allPaths
-    .map((pathname) => {
+    .map(({ pathname, lastmod }) => {
       const href = new URL(pathname, site).href;
-      return `  <url><loc>${escapeXml(href)}</loc></url>`;
+      const lastmodXml = lastmod ? `<lastmod>${lastmod.toISOString()}</lastmod>` : '';
+      return `  <url><loc>${escapeXml(href)}</loc>${lastmodXml}</url>`;
     })
     .join('\n');
 
