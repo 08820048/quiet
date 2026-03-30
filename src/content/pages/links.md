@@ -22,3 +22,4 @@ description: "Useful links."
 - [wmSafe博客](https://blog.wm404.com/)
 - [LiuCabbage](https://www.baocaige.top)
 - [十万个为什么](https://10why.net)
+- [看美景](http://www.kanmeijing.com/)
