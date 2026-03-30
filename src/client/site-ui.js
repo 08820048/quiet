@@ -8,8 +8,11 @@ function ready(fn) {
 
 function initThemeAndSearch() {
   const themeToggle = document.getElementById("theme-toggle");
+  const themeWordmark = document.getElementById("theme-transition-wordmark");
   const headerSearch = document.getElementById("header-search");
   const hasSearch = document.body.classList.contains("has-search");
+  let isThemeTransitionRunning = false;
+  let themeWordmarkHideTimer = null;
   const syncSearch = (value) => {
     window.dispatchEvent(
       new CustomEvent("globalsearchchange", {
@@ -31,16 +34,133 @@ function initThemeAndSearch() {
     localStorage.setItem("theme", resolvedTheme);
     if (themeToggle) {
       themeToggle.textContent = resolvedTheme === "dark" ? "light" : "dark";
+      themeToggle.setAttribute(
+        "aria-label",
+        resolvedTheme === "dark"
+          ? "Switch to light mode"
+          : "Switch to dark mode",
+      );
+      themeToggle.setAttribute(
+        "title",
+        resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode",
+      );
+    }
+  };
+
+  const shouldReduceMotion = () =>
+    window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+
+  const showThemeWordmark = () => {
+    if (!(themeWordmark instanceof HTMLElement)) {
+      return;
+    }
+    if (themeWordmarkHideTimer) {
+      window.clearTimeout(themeWordmarkHideTimer);
+      themeWordmarkHideTimer = null;
+    }
+    themeWordmark.hidden = false;
+    themeWordmark.classList.add("is-visible");
+  };
+
+  const hideThemeWordmark = (delay = 0) => {
+    if (!(themeWordmark instanceof HTMLElement)) {
+      return;
+    }
+    if (themeWordmarkHideTimer) {
+      window.clearTimeout(themeWordmarkHideTimer);
+    }
+    themeWordmarkHideTimer = window.setTimeout(() => {
+      themeWordmark.classList.remove("is-visible");
+      themeWordmark.hidden = true;
+      themeWordmarkHideTimer = null;
+    }, delay);
+  };
+
+  const getThemeToggleOrigin = (event) => {
+    if (
+      typeof event?.clientX === "number" &&
+      typeof event?.clientY === "number" &&
+      (event.clientX !== 0 || event.clientY !== 0)
+    ) {
+      return { x: event.clientX, y: event.clientY };
+    }
+
+    if (themeToggle instanceof HTMLElement) {
+      const rect = themeToggle.getBoundingClientRect();
+      return {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      };
+    }
+
+    return {
+      x: window.innerWidth,
+      y: 0,
+    };
+  };
+
+  const animateThemeChange = async (nextTheme, event) => {
+    if (shouldReduceMotion()) {
+      applyTheme(nextTheme);
+      return;
+    }
+
+    if (typeof document.startViewTransition !== "function") {
+      showThemeWordmark();
+      applyTheme(nextTheme);
+      hideThemeWordmark(420);
+      return;
+    }
+
+    const { x, y } = getThemeToggleOrigin(event);
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y),
+    );
+
+    const transition = document.startViewTransition(() => {
+      applyTheme(nextTheme);
+      showThemeWordmark();
+    });
+
+    try {
+      await transition.ready;
+      document.documentElement.animate(
+        {
+          clipPath: [
+            `circle(0px at ${x}px ${y}px)`,
+            `circle(${endRadius}px at ${x}px ${y}px)`,
+          ],
+        },
+        {
+          duration: 1100,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+          pseudoElement: "::view-transition-new(root)",
+        },
+      );
+      await transition.finished;
+    } catch {
+      applyTheme(nextTheme);
+    } finally {
+      hideThemeWordmark();
     }
   };
 
   applyTheme(document.documentElement.dataset.theme);
 
   if (themeToggle) {
-    themeToggle.addEventListener("click", () => {
+    themeToggle.addEventListener("click", async (event) => {
+      if (isThemeTransitionRunning) {
+        return;
+      }
+      isThemeTransitionRunning = true;
       const nextTheme =
         document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-      applyTheme(nextTheme);
+      try {
+        await animateThemeChange(nextTheme, event);
+      } finally {
+        isThemeTransitionRunning = false;
+      }
     });
   }
 

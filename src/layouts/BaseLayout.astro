@@ -30,6 +30,7 @@ const {
 } = Astro.props;
 
 const siteOrigin = getSiteOrigin(Astro.site);
+const browserTitle = 'QUIET';
 const siteTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
 const siteDescription = description ?? SITE_DESCRIPTION;
 const canonical = getAbsoluteUrl(Astro.url.pathname, siteOrigin);
@@ -84,7 +85,7 @@ const headSchema = schema ?? defaultSchema;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{siteTitle}</title>
+    <title>{browserTitle}</title>
     <meta name="description" content={siteDescription} />
     <meta name="robots" content="index,follow,max-image-preview:large" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
@@ -218,6 +219,9 @@ const headSchema = schema ?? defaultSchema;
         </div>
       </div>
     </footer>
+    <div id="theme-transition-wordmark" class="theme-transition-wordmark" aria-hidden="true" hidden>
+      <span class="theme-transition-wordmark-text">QUIET</span>
+    </div>
     <button
       id="back-to-top"
       class="back-to-top"
