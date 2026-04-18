@@ -126,7 +126,7 @@ const headSchema = schema ?? defaultSchema;
       is:inline
       defer
       src="https://cloud.umami.is/script.js"
-      data-website-id="3b459ab1-1907-468c-bcbe-58e26c627f51"
+      data-website-id="66b435e0-5ca6-4001-9716-7faa4760ca9d"
     ></script>
     <script is:inline>
       (() => {
@@ -140,6 +140,40 @@ const headSchema = schema ?? defaultSchema;
     </script>
 
     <script is:inline type="module" src={siteUiClientUrl}></script>
+    <script is:inline>
+      (async () => {
+        const el = document.getElementById('umami-views');
+        if (!el) return;
+        const SHARE_ID = 'Xi4CTmCjARCsOIEV';
+        const API_BASE = 'https://cloud.umami.is/analytics/us/api';
+        try {
+          const shareRes = await fetch(`${API_BASE}/share/${SHARE_ID}`);
+          if (!shareRes.ok) return;
+          const { token, websiteId } = await shareRes.json();
+          if (!token || !websiteId) return;
+          const endAt = Date.now();
+          const statsRes = await fetch(
+            `${API_BASE}/websites/${websiteId}/stats?startAt=0&endAt=${endAt}`,
+            {
+              headers: {
+                'x-umami-share-token': token,
+                'x-umami-share-context': '1',
+              },
+            }
+          );
+          if (!statsRes.ok) return;
+          const data = await statsRes.json();
+          const views = typeof data?.pageviews === 'number'
+            ? data.pageviews
+            : data?.pageviews?.value;
+          if (typeof views === 'number') {
+            el.textContent = ` · Views ${views.toLocaleString()}`;
+          }
+        } catch (_) {
+          /* silently ignore */
+        }
+      })();
+    </script>
     {enableMermaid && <script is:inline type="module" src={mermaidClientUrl}></script>}
   </head>
   <body class={bodyClass}>
@@ -190,7 +224,7 @@ const headSchema = schema ?? defaultSchema;
     </main>
     <footer class="site-footer">
       <div class="site-footer-content">
-        <p>© 2026 Quiet. Built by XuYi.</p>
+        <p>© 2026 Quiet. Built by XuYi.<span id="umami-views" class="site-stats" aria-live="polite"></span></p>
         <div class="site-social-links" aria-label="Social links">
           <a
             class="site-social-link"

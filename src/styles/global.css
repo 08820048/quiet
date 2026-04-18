@@ -120,6 +120,9 @@ body.post-detail-page main {
 .site-footer p {
   margin: 0;
 }
+.site-stats {
+  color: var(--muted);
+}
 
 .site-social-links {
   display: inline-flex;
