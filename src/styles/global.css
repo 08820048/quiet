@@ -638,6 +638,24 @@ nav.site-nav {
   color: var(--text);
 }
 
+/* Plain text style for homepage post list chips */
+.post-list .meta-chip {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.post-list .meta-chip.meta-chip-category {
+  color: var(--text);
+}
+
+.post-list .meta-chip:hover {
+  text-decoration: none;
+}
+
 .archive-hero {
   margin-bottom: 28px;
 }
