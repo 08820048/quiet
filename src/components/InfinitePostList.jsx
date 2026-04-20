@@ -150,22 +150,6 @@ export default function InfinitePostList({
                   </div>
                   {showPreview ? (
                     <>
-                      <div className="post-list-meta">
-                        {post.category ? (
-                          <span className="meta-chip meta-chip-category">
-                            {post.category}
-                          </span>
-                        ) : null}
-                        <span className="meta-chip">{post.readingMinutes} min read</span>
-                        {(post.tags ?? []).slice(0, 4).map((tag) => (
-                          <span
-                            key={`${post.id}-${tag}`}
-                            className="meta-chip"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
                       {post.description ? (
                         <p className="post-list-description">{post.description}</p>
                       ) : null}
