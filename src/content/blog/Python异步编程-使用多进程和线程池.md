@@ -43,14 +43,14 @@
 
 1. 导入模块
 
-```ts
+```python
 import os,random
 form multiprocessing import Process,Pipe 
 ```
 
 2. 生产者
 
-```Python
+```python
 def producer_task(conn):
   value = random.randint(1,10)
   conn.send(value)
