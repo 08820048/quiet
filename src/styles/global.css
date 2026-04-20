@@ -423,18 +423,22 @@ nav.site-nav {
   overflow-x: auto;
   border-radius: 6px;
   line-height: 1;
+  border: 1px solid var(--border);
   font-family:
     "Typestar", "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
     Consolas, "Liberation Mono", "Courier New", monospace;
+  position: relative;
 }
 
 .post-content pre.astro-code {
   padding: 12px 16px;
   border-radius: 6px;
   line-height: 1;
+  border: 1px solid var(--border);
   font-family:
     "Typestar", "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
     Consolas, "Liberation Mono", "Courier New", monospace;
+  position: relative;
 }
 
 .post-content pre.astro-code code,
@@ -452,6 +456,49 @@ nav.site-nav {
   display: block;
   line-height: 1;
   margin: 0;
+}
+
+/* Copy button for code blocks */
+.code-block-wrapper {
+  position: relative;
+}
+
+.code-copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.code-copy-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.code-copy-btn:hover {
+  color: var(--text);
+  border-color: var(--link);
+}
+
+.code-copy-btn.copied {
+  color: #22c55e;
+  border-color: #22c55e;
+}
+
+.post-content pre:hover .code-copy-btn,
+.code-block-wrapper:hover .code-copy-btn {
+  opacity: 1;
 }
 
 .post-content pre.astro-code,
