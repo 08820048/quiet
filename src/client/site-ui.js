@@ -7,7 +7,9 @@ function ready(fn) {
 }
 
 function initThemeAndSearch() {
+  const siteNav = document.querySelector(".site-nav");
   const themeToggle = document.getElementById("theme-toggle");
+  const searchToggle = document.getElementById("header-search-toggle");
   const themeWordmark = document.getElementById("theme-transition-wordmark");
   const headerSearch = document.getElementById("header-search");
   const hasSearch = document.body.classList.contains("has-search");
@@ -27,6 +29,45 @@ function initThemeAndSearch() {
         'input, textarea, select, [contenteditable="true"], [contenteditable=""]',
       ),
     );
+  const syncSearchToggleState = () => {
+    if (!(searchToggle instanceof HTMLElement) || !(siteNav instanceof HTMLElement)) {
+      return;
+    }
+    searchToggle.setAttribute(
+      "aria-expanded",
+      siteNav.classList.contains("is-search-expanded") ? "true" : "false",
+    );
+  };
+  const openSearch = () => {
+    if (!(siteNav instanceof HTMLElement)) {
+      return false;
+    }
+
+    if (siteNav.classList.contains("is-condensed")) {
+      if (!hasSearch || !(headerSearch instanceof HTMLInputElement)) {
+        const url = new URL("/search", window.location.origin);
+        window.location.assign(url.toString());
+        return true;
+      }
+
+      siteNav.classList.add("is-search-expanded");
+      siteNav.classList.remove("is-menu-expanded");
+      syncSearchToggleState();
+      window.requestAnimationFrame(() => {
+        headerSearch.focus();
+        headerSearch.select();
+      });
+      return true;
+    }
+
+    if (headerSearch instanceof HTMLInputElement) {
+      headerSearch.focus();
+      headerSearch.select();
+      return true;
+    }
+
+    return false;
+  };
 
   const applyTheme = (theme) => {
     const resolvedTheme = theme === "dark" ? "dark" : "light";
@@ -201,6 +242,37 @@ function initThemeAndSearch() {
     });
   }
 
+  if (searchToggle) {
+    searchToggle.addEventListener("click", () => {
+      if (!(siteNav instanceof HTMLElement)) {
+        return;
+      }
+
+      if (!siteNav.classList.contains("is-condensed")) {
+        openSearch();
+        return;
+      }
+
+      if (!hasSearch || !(headerSearch instanceof HTMLInputElement)) {
+        const url = new URL("/search", window.location.origin);
+        window.location.assign(url.toString());
+        return;
+      }
+
+      const shouldOpen = !siteNav.classList.contains("is-search-expanded");
+      siteNav.classList.toggle("is-search-expanded", shouldOpen);
+      siteNav.classList.remove("is-menu-expanded");
+      syncSearchToggleState();
+
+      if (shouldOpen) {
+        window.requestAnimationFrame(() => {
+          headerSearch.focus();
+          headerSearch.select();
+        });
+      }
+    });
+  }
+
   document.addEventListener("keydown", (event) => {
     if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) {
       return;
@@ -210,21 +282,26 @@ function initThemeAndSearch() {
     }
     event.preventDefault();
 
-    if (headerSearch && hasSearch) {
-      headerSearch.focus();
-      headerSearch.select();
+    if ((headerSearch && hasSearch) || searchToggle) {
+      openSearch();
       return;
     }
 
     const url = new URL("/search", window.location.origin);
     window.location.assign(url.toString());
   });
+
+  syncSearchToggleState();
 }
 
 function initAdaptiveHeader() {
   const siteNav = document.querySelector(".site-nav");
+  const menuToggle = document.getElementById("nav-menu-toggle");
+  const searchToggle = document.getElementById("header-search-toggle");
   const shouldAlwaysDistribute = document.body.classList.contains("post-detail-page");
   const distributeScrollRange = 220;
+  const condensedThreshold = 0.64;
+  const isDesktop = () => window.innerWidth > 720;
 
   if (!(siteNav instanceof HTMLElement)) {
     return;
@@ -233,12 +310,35 @@ function initAdaptiveHeader() {
   let currentProgress = shouldAlwaysDistribute ? 1 : 0;
   let targetProgress = currentProgress;
   let animationFrameId = 0;
+  const syncToggleStates = () => {
+    if (menuToggle instanceof HTMLElement) {
+      menuToggle.setAttribute(
+        "aria-expanded",
+        siteNav.classList.contains("is-menu-expanded") ? "true" : "false",
+      );
+    }
+    if (searchToggle instanceof HTMLElement) {
+      searchToggle.setAttribute(
+        "aria-expanded",
+        siteNav.classList.contains("is-search-expanded") ? "true" : "false",
+      );
+    }
+  };
+  const syncCondensedState = (progress) => {
+    const shouldCondense = isDesktop() && progress >= condensedThreshold;
+    siteNav.classList.toggle("is-condensed", shouldCondense);
+    if (!shouldCondense) {
+      siteNav.classList.remove("is-menu-expanded", "is-search-expanded");
+    }
+    syncToggleStates();
+  };
 
   const applyProgress = (progress) => {
     siteNav.style.setProperty(
       "--nav-distribute-progress",
       progress.toFixed(3),
     );
+    syncCondensedState(progress);
   };
 
   const animateProgress = () => {
@@ -268,6 +368,40 @@ function initAdaptiveHeader() {
   };
 
   applyProgress(currentProgress);
+
+  if (menuToggle instanceof HTMLElement) {
+    menuToggle.addEventListener("click", () => {
+      if (!siteNav.classList.contains("is-condensed")) {
+        return;
+      }
+      const shouldOpen = !siteNav.classList.contains("is-menu-expanded");
+      siteNav.classList.toggle("is-menu-expanded", shouldOpen);
+      siteNav.classList.remove("is-search-expanded");
+      syncToggleStates();
+    });
+  }
+
+  document.addEventListener("click", (event) => {
+    if (!siteNav.classList.contains("is-condensed")) {
+      return;
+    }
+    if (event.target instanceof Node && siteNav.contains(event.target)) {
+      return;
+    }
+    siteNav.classList.remove("is-menu-expanded", "is-search-expanded");
+    syncToggleStates();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") {
+      return;
+    }
+    if (!siteNav.classList.contains("is-condensed")) {
+      return;
+    }
+    siteNav.classList.remove("is-menu-expanded", "is-search-expanded");
+    syncToggleStates();
+  });
 
   if (shouldAlwaysDistribute) {
     return;

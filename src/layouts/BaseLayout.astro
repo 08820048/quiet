@@ -180,8 +180,33 @@ const headSchema = schema ?? defaultSchema;
     <header class="site-header">
       <nav class="site-nav">
         <div class="site-nav-primary">
-          <a class="site-brand" href="/">Quiet</a>
-          <div class="site-nav-links">
+          <div class="site-brand-group">
+            <a class="site-brand" href="/">Quiet</a>
+            <button
+              id="nav-menu-toggle"
+              class="site-menu-toggle"
+              type="button"
+              aria-label="Expand navigation"
+              title="Expand navigation"
+              aria-controls="site-nav-links"
+              aria-expanded="false"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M4 7h16"></path>
+                <path d="M4 12h16"></path>
+                <path d="M4 17h10"></path>
+              </svg>
+            </button>
+          </div>
+          <div id="site-nav-links" class="site-nav-links">
             {NAV_ITEMS.map((item) => {
               const isActive =
                 item.href === '/'
@@ -199,18 +224,41 @@ const headSchema = schema ?? defaultSchema;
           </div>
         </div>
         <div class="site-nav-secondary">
-          {showSearch && (
-            <div class="site-search">
-              <span class="site-search-shortcut" aria-hidden="true">/</span>
-              <input
-                id="header-search"
-                type="search"
-                class="site-search-input"
-                placeholder={SEARCH_PLACEHOLDER}
-                aria-label={SEARCH_PLACEHOLDER}
-              />
-            </div>
-          )}
+          <div class="site-search-group">
+            <button
+              id="header-search-toggle"
+              class="site-search-toggle"
+              type="button"
+              aria-label="Search"
+              title="Search"
+              aria-expanded="false"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-3.5-3.5"></path>
+              </svg>
+            </button>
+            {showSearch && (
+              <div class="site-search">
+                <span class="site-search-shortcut" aria-hidden="true">/</span>
+                <input
+                  id="header-search"
+                  type="search"
+                  class="site-search-input"
+                  placeholder={SEARCH_PLACEHOLDER}
+                  aria-label={SEARCH_PLACEHOLDER}
+                />
+              </div>
+            )}
+          </div>
           <div class="site-controls">
             <button
               id="theme-toggle"
