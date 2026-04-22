@@ -33,7 +33,6 @@ function initThemeAndSearch() {
     document.documentElement.dataset.theme = resolvedTheme;
     localStorage.setItem("theme", resolvedTheme);
     if (themeToggle) {
-      themeToggle.textContent = resolvedTheme === "dark" ? "light" : "dark";
       themeToggle.setAttribute(
         "aria-label",
         resolvedTheme === "dark"
@@ -43,6 +42,10 @@ function initThemeAndSearch() {
       themeToggle.setAttribute(
         "title",
         resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode",
+      );
+      themeToggle.setAttribute(
+        "aria-pressed",
+        resolvedTheme === "dark" ? "true" : "false",
       );
     }
   };
@@ -218,6 +221,63 @@ function initThemeAndSearch() {
   });
 }
 
+function initAdaptiveHeader() {
+  const siteNav = document.querySelector(".site-nav");
+  const shouldAlwaysDistribute = document.body.classList.contains("post-detail-page");
+  const distributeScrollRange = 220;
+
+  if (!(siteNav instanceof HTMLElement)) {
+    return;
+  }
+
+  let currentProgress = shouldAlwaysDistribute ? 1 : 0;
+  let targetProgress = currentProgress;
+  let animationFrameId = 0;
+
+  const applyProgress = (progress) => {
+    siteNav.style.setProperty(
+      "--nav-distribute-progress",
+      progress.toFixed(3),
+    );
+  };
+
+  const animateProgress = () => {
+    currentProgress += (targetProgress - currentProgress) * 0.14;
+
+    if (Math.abs(targetProgress - currentProgress) < 0.001) {
+      currentProgress = targetProgress;
+      applyProgress(currentProgress);
+      animationFrameId = 0;
+      return;
+    }
+
+    applyProgress(currentProgress);
+    animationFrameId = window.requestAnimationFrame(animateProgress);
+  };
+
+  const updateTargetProgress = () => {
+    targetProgress = shouldAlwaysDistribute
+      ? 1
+      : Math.max(0, Math.min(window.scrollY / distributeScrollRange, 1));
+
+    if (animationFrameId !== 0) {
+      return;
+    }
+
+    animationFrameId = window.requestAnimationFrame(animateProgress);
+  };
+
+  applyProgress(currentProgress);
+
+  if (shouldAlwaysDistribute) {
+    return;
+  }
+
+  window.addEventListener("scroll", updateTargetProgress, { passive: true });
+  window.addEventListener("resize", updateTargetProgress, { passive: true });
+  updateTargetProgress();
+}
+
 function initImageViewer() {
   const viewer = document.getElementById("image-viewer");
   const viewerImage = document.getElementById("image-viewer-image");
@@ -336,6 +396,7 @@ function initBackToTop() {
 }
 
 ready(() => {
+  initAdaptiveHeader();
   initThemeAndSearch();
   initImageViewer();
   initBackToTop();

@@ -179,43 +179,80 @@ const headSchema = schema ?? defaultSchema;
   <body class={bodyClass}>
     <header class="site-header">
       <nav class="site-nav">
-        <a class="site-brand" href="/">Quiet</a>
-        <div class="site-nav-links">
-          {NAV_ITEMS.map((item) => {
-            const isActive =
-              item.href === '/'
-                ? pathname === '/'
-                : item.href.endsWith('.xml')
-                  ? pathname === item.href
-                  : pathname === item.href || pathname.startsWith(`${item.href}/`);
+        <div class="site-nav-primary">
+          <a class="site-brand" href="/">Quiet</a>
+          <div class="site-nav-links">
+            {NAV_ITEMS.map((item) => {
+              const isActive =
+                item.href === '/'
+                  ? pathname === '/'
+                  : item.href.endsWith('.xml')
+                    ? pathname === item.href
+                    : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
-            return (
-              <a class:list={['site-nav-link', { 'is-active': isActive }]} href={item.href}>
-                {item.label}
-              </a>
-            );
-          })}
-        </div>
-        {showSearch && (
-          <div class="site-search">
-            <span class="site-search-shortcut" aria-hidden="true">/</span>
-            <input
-              id="header-search"
-              type="search"
-              class="site-search-input"
-              placeholder={SEARCH_PLACEHOLDER}
-              aria-label={SEARCH_PLACEHOLDER}
-            />
+              return (
+                <a class:list={['site-nav-link', { 'is-active': isActive }]} href={item.href}>
+                  {item.label}
+                </a>
+              );
+            })}
           </div>
-        )}
-        <div class="site-controls">
-          <button
-            id="theme-toggle"
-            class="theme-toggle"
-            type="button"
-            aria-label="Toggle dark mode"
-            title="Toggle dark mode"
-          >dark</button>
+        </div>
+        <div class="site-nav-secondary">
+          {showSearch && (
+            <div class="site-search">
+              <span class="site-search-shortcut" aria-hidden="true">/</span>
+              <input
+                id="header-search"
+                type="search"
+                class="site-search-input"
+                placeholder={SEARCH_PLACEHOLDER}
+                aria-label={SEARCH_PLACEHOLDER}
+              />
+            </div>
+          )}
+          <div class="site-controls">
+            <button
+              id="theme-toggle"
+              class="theme-toggle"
+              type="button"
+              aria-label="Toggle dark mode"
+              title="Toggle dark mode"
+            >
+              <span class="theme-toggle-icons" aria-hidden="true">
+                <svg
+                  class="theme-toggle-icon theme-toggle-icon-sun"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="4"></circle>
+                  <path d="M12 2v2.5"></path>
+                  <path d="M12 19.5V22"></path>
+                  <path d="m4.93 4.93 1.77 1.77"></path>
+                  <path d="m17.3 17.3 1.77 1.77"></path>
+                  <path d="M2 12h2.5"></path>
+                  <path d="M19.5 12H22"></path>
+                  <path d="m4.93 19.07 1.77-1.77"></path>
+                  <path d="m17.3 6.7 1.77-1.77"></path>
+                </svg>
+                <svg
+                  class="theme-toggle-icon theme-toggle-icon-moon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+                </svg>
+              </span>
+            </button>
+          </div>
         </div>
       </nav>
     </header>
