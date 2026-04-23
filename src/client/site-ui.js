@@ -529,9 +529,87 @@ function initBackToTop() {
   syncVisibility();
 }
 
+function initPostToc() {
+  const postContent = document.querySelector(".post-content");
+  const tocShell = document.querySelector(".post-toc-shell");
+  const tocLinks = Array.from(document.querySelectorAll(".post-toc-link"));
+
+  if (!(postContent instanceof HTMLElement) || tocLinks.length === 0) {
+    return;
+  }
+
+  const syncTocPanelWidth = () => {
+    if (!(tocShell instanceof HTMLElement)) {
+      return;
+    }
+    const { left } = tocShell.getBoundingClientRect();
+    const width = Math.max(220, Math.floor(window.innerWidth - left));
+    tocShell.style.setProperty("--post-toc-panel-width", `${width}px`);
+  };
+
+  const headingTargets = Array.from(
+    postContent.querySelectorAll("h1, h2, h3, h4, h5, h6"),
+  );
+
+  if (headingTargets.length === 0) {
+    return;
+  }
+
+  headingTargets.forEach((heading, index) => {
+    const tocLink = tocLinks[index];
+    if (!(heading instanceof HTMLElement) || !(tocLink instanceof HTMLAnchorElement)) {
+      return;
+    }
+
+    const targetId = tocLink.dataset.targetId;
+    if (!targetId) {
+      return;
+    }
+
+    if (!heading.id) {
+      heading.id = targetId;
+    }
+    tocLink.setAttribute("href", `#${heading.id}`);
+  });
+
+  const resolvedHeadings = headingTargets.filter(
+    (heading) => heading instanceof HTMLElement && heading.id,
+  );
+
+  if (resolvedHeadings.length === 0) {
+    return;
+  }
+
+  const syncActiveLink = () => {
+    let activeId = resolvedHeadings[0].id;
+
+    for (const heading of resolvedHeadings) {
+      if (heading.getBoundingClientRect().top <= 140) {
+        activeId = heading.id;
+      } else {
+        break;
+      }
+    }
+
+    tocLinks.forEach((link) => {
+      if (!(link instanceof HTMLAnchorElement)) {
+        return;
+      }
+      link.classList.toggle("is-active", link.getAttribute("href") === `#${activeId}`);
+    });
+  };
+
+  document.addEventListener("scroll", syncActiveLink, { passive: true });
+  window.addEventListener("resize", syncActiveLink, { passive: true });
+  window.addEventListener("resize", syncTocPanelWidth, { passive: true });
+  syncTocPanelWidth();
+  syncActiveLink();
+}
+
 ready(() => {
   initAdaptiveHeader();
   initThemeAndSearch();
   initImageViewer();
   initBackToTop();
+  initPostToc();
 });

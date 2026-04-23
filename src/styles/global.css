@@ -498,6 +498,182 @@ body.post-detail-page header.site-header nav.site-nav {
   margin-bottom: 24px;
 }
 
+.post-detail-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 40px;
+}
+
+.post-detail-layout > .post-detail {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.post-toc-shell {
+  --post-toc-panel-width: 260px;
+  --post-toc-rail-width: 42px;
+  position: sticky;
+  top: 112px;
+  width: var(--post-toc-rail-width);
+  flex: 0 0 var(--post-toc-rail-width);
+  margin-left: auto;
+  align-self: flex-start;
+  overflow: visible;
+  z-index: 2;
+}
+
+.post-toc {
+  --toc-item-count: 0;
+  width: var(--post-toc-rail-width);
+  max-height: calc(100vh - 140px);
+  padding: 8px 0 8px 12px;
+  border-left: 1px solid color-mix(in srgb, var(--border) 92%, transparent);
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  transition:
+    width 0.24s ease,
+    padding 0.24s ease,
+    border-color 0.24s ease,
+    background 0.24s ease,
+    box-shadow 0.24s ease;
+}
+
+.post-toc::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.post-toc:hover,
+.post-toc:focus-within {
+  width: var(--post-toc-panel-width);
+  padding: 12px 0 12px 14px;
+  border-left-color: color-mix(in srgb, var(--text) 16%, var(--border));
+  background: color-mix(in srgb, var(--bg) 95%, transparent);
+  box-shadow: -14px 0 28px color-mix(in srgb, var(--bg) 82%, transparent);
+}
+
+.post-toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: clamp(3px, calc(9px - var(--toc-item-count) * 0.18px), 8px);
+}
+
+.post-toc-item {
+  --toc-line-width: 18px;
+  --toc-line-thickness: 2.5px;
+}
+
+.post-toc-item.is-depth-2 {
+  --toc-line-width: 16px;
+  --toc-line-thickness: 2px;
+}
+
+.post-toc-item.is-depth-3 {
+  --toc-line-width: 14px;
+  --toc-line-thickness: 1.6px;
+}
+
+.post-toc-item.is-depth-4 {
+  --toc-line-width: 12px;
+  --toc-line-thickness: 1.25px;
+}
+
+.post-toc-item.is-depth-5 {
+  --toc-line-width: 10px;
+  --toc-line-thickness: 1px;
+}
+
+.post-toc-item.is-depth-6 {
+  --toc-line-width: 8px;
+  --toc-line-thickness: 1px;
+}
+
+.post-toc-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--muted);
+  min-width: 0;
+}
+
+.post-toc-link:hover,
+.post-toc-link:focus-visible {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.post-toc-link.is-active {
+  color: var(--text);
+}
+
+.post-toc-line {
+  width: var(--toc-line-width);
+  height: var(--toc-line-thickness);
+  flex: 0 0 auto;
+  background: currentColor;
+  opacity: 0.72;
+  border-radius: 999px;
+  transition:
+    width 0.22s ease,
+    height 0.22s ease,
+    opacity 0.22s ease;
+}
+
+.post-toc:hover .post-toc-line,
+.post-toc:focus-within .post-toc-line {
+  width: 16px;
+}
+
+.post-toc-item.is-depth-2 .post-toc-line {
+  margin-left: 4px;
+}
+
+.post-toc-item.is-depth-3 .post-toc-line {
+  margin-left: 8px;
+}
+
+.post-toc-item.is-depth-4 .post-toc-line {
+  margin-left: 12px;
+}
+
+.post-toc-item.is-depth-5 .post-toc-line {
+  margin-left: 16px;
+}
+
+.post-toc-item.is-depth-6 .post-toc-line {
+  margin-left: 20px;
+}
+
+.post-toc-text {
+  max-width: 0;
+  opacity: 0;
+  transform: translate3d(10px, 0, 0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+  padding-right: 0;
+  transition:
+    max-width 0.24s ease,
+    opacity 0.2s ease,
+    transform 0.24s ease;
+}
+
+.post-toc:hover .post-toc-text,
+.post-toc:focus-within .post-toc-text {
+  max-width: calc(var(--post-toc-panel-width) - 56px);
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
+  padding-right: 14px;
+}
+
 .post-list {
   list-style: square;
   padding-left: 20px;
@@ -744,6 +920,25 @@ body.post-detail-page header.site-header nav.site-nav {
 
 .post-content blockquote p {
   margin: 0;
+}
+
+.post-content h1[id],
+.post-content h2[id],
+.post-content h3[id],
+.post-content h4[id],
+.post-content h5[id],
+.post-content h6[id] {
+  scroll-margin-top: 104px;
+}
+
+@media (max-width: 1100px) {
+  .post-detail-layout {
+    display: block;
+  }
+
+  .post-toc-shell {
+    display: none;
+  }
 }
 
 .post-pagination {

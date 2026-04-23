@@ -11,6 +11,48 @@ type PostModule = {
   Content: any;
 };
 
+type TocItem = {
+  depth: 1 | 2 | 3 | 4 | 5 | 6;
+  text: string;
+  id: string;
+};
+
+const extractTocItems = (markdown: string): TocItem[] => {
+  const content = markdown.replace(/```[\s\S]*?```/g, '');
+  const headingPattern = /^(#{1,6})\s+(.+)$/gm;
+  const usedIds = new Map<string, number>();
+  const tocItems: TocItem[] = [];
+
+  let match: RegExpExecArray | null;
+  while ((match = headingPattern.exec(content)) !== null) {
+    const hashes = match[1];
+    const rawText = match[2]
+      .replace(/\[(.*?)\]\(.*?\)/g, '$1')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/~~(.*?)~~/g, '$1')
+      .replace(/<[^>]+>/g, '')
+      .trim();
+
+    if (!rawText) {
+      continue;
+    }
+
+    const baseId = slugifyText(rawText);
+    const duplicateCount = usedIds.get(baseId) ?? 0;
+    usedIds.set(baseId, duplicateCount + 1);
+
+    tocItems.push({
+      depth: hashes.length as TocItem['depth'],
+      text: rawText,
+      id: duplicateCount === 0 ? baseId : `${baseId}-${duplicateCount + 1}`,
+    });
+  }
+
+  return tocItems;
+};
+
 /** Build static routes and attach neighboring posts. */
 export async function getStaticPaths() {
   const posts = await getAllPosts();
@@ -60,9 +102,11 @@ if (!loader) {
 
 const mod = await loader();
 const Content = mod.Content;
+const rawMarkdown = await mod.rawContent();
 const publishedDate = post.publishedDateISO ? formatUtcLongDate(new Date(post.publishedDateISO)) : 'Unknown';
 const updatedDate = post.updatedDateISO ? formatUtcLongDate(new Date(post.updatedDateISO)) : null;
 const showUpdated = updatedDate && updatedDate !== publishedDate;
+const tocItems = extractTocItems(rawMarkdown);
 ---
 
 <BaseLayout
@@ -76,59 +120,77 @@ const showUpdated = updatedDate && updatedDate !== publishedDate;
   keywords={post.tags}
   imagePath={post.coverImage ?? undefined}
 >
-  <article class="post post-detail">
-    <h1>{post.title}</h1>
-    <div class="post-meta">
-      <span>Published {publishedDate}</span>
-      {showUpdated && <span>Updated {updatedDate}</span>}
-      {post.category && <span>{post.category}</span>}
-      <span>{post.readingMinutes} min read</span>
-    </div>
-    {post.tags.length > 0 && (
-      <div class="post-tags">
-        {post.tags.map((tag: string) => (
-          <a class="post-tag" href={`/tags/${slugifyText(tag)}`}>#{tag}</a>
-        ))}
+  <div class="post-detail-layout">
+    <article class="post post-detail">
+      <h1>{post.title}</h1>
+      <div class="post-meta">
+        <span>Published {publishedDate}</span>
+        {showUpdated && <span>Updated {updatedDate}</span>}
+        {post.category && <span>{post.category}</span>}
+        <span>{post.readingMinutes} min read</span>
       </div>
-    )}
-    {post.description && (
-      <p class="post-summary">{post.description}</p>
-    )}
-    <div class="post-content">
-      <Content />
-    </div>
-    {relatedPosts.length > 0 && (
-      <section class="related-posts" aria-labelledby="related-posts-title">
-        <h2 id="related-posts-title">Related Posts</h2>
-        <ul class="related-posts-list">
-          {relatedPosts.map((relatedPost) => (
-            <li class="related-posts-item">
-              <a class="related-posts-link" href={relatedPost.url}>{relatedPost.title}</a>
-              {relatedPost.description && (
-                <p class="related-posts-description">{relatedPost.description}</p>
-              )}
-            </li>
+      {post.tags.length > 0 && (
+        <div class="post-tags">
+          {post.tags.map((tag: string) => (
+            <a class="post-tag" href={`/tags/${slugifyText(tag)}`}>#{tag}</a>
           ))}
-        </ul>
-      </section>
-    )}
-    {(previousPost || nextPost) && (
-      <nav class="post-pagination" aria-label="Post navigation">
-        <div class="post-pagination-item post-pagination-prev">
-          {previousPost && (
-            <a href={previousPost.url} title={previousPost.title}>
-              {previousPost.title}
-            </a>
-          )}
         </div>
-        <div class="post-pagination-item post-pagination-next">
-          {nextPost && (
-            <a href={nextPost.url} title={nextPost.title}>
-              {nextPost.title}
-            </a>
-          )}
-        </div>
-      </nav>
+      )}
+      {post.description && (
+        <p class="post-summary">{post.description}</p>
+      )}
+      <div class="post-content">
+        <Content />
+      </div>
+      {relatedPosts.length > 0 && (
+        <section class="related-posts" aria-labelledby="related-posts-title">
+          <h2 id="related-posts-title">Related Posts</h2>
+          <ul class="related-posts-list">
+            {relatedPosts.map((relatedPost) => (
+              <li class="related-posts-item">
+                <a class="related-posts-link" href={relatedPost.url}>{relatedPost.title}</a>
+                {relatedPost.description && (
+                  <p class="related-posts-description">{relatedPost.description}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {(previousPost || nextPost) && (
+        <nav class="post-pagination" aria-label="Post navigation">
+          <div class="post-pagination-item post-pagination-prev">
+            {previousPost && (
+              <a href={previousPost.url} title={previousPost.title}>
+                {previousPost.title}
+              </a>
+            )}
+          </div>
+          <div class="post-pagination-item post-pagination-next">
+            {nextPost && (
+              <a href={nextPost.url} title={nextPost.title}>
+                {nextPost.title}
+              </a>
+            )}
+          </div>
+        </nav>
+      )}
+    </article>
+    {tocItems.length > 0 && (
+      <aside class="post-toc-shell" aria-label="Table of contents">
+        <nav class="post-toc" style={`--toc-item-count: ${tocItems.length};`}>
+          <ol class="post-toc-list">
+            {tocItems.map((item) => (
+              <li class={`post-toc-item is-depth-${item.depth}`}>
+                <a class="post-toc-link" href={`#${item.id}`} data-target-id={item.id} title={item.text}>
+                  <span class="post-toc-line" aria-hidden="true"></span>
+                  <span class="post-toc-text">{item.text}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      </aside>
     )}
-  </article>
+  </div>
 </BaseLayout>
